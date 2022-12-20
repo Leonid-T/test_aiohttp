@@ -1,0 +1,3 @@
+# default configuration file
+
+db_url: 'postgresql+asyncpg://postgres:admin@localhost:5432/test_aiohttp'
