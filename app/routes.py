@@ -2,10 +2,11 @@ from aiohttp import web
 from . import views
 
 
-def setup_routes(app):
-    app.add_routes([
-        web.get('/create_user', views.create_user),
-        web.get('/read_user', views.read_user),
-        web.get('/update_user', views.update_user),
-        web.get('/delete_user', views.delete_user),
-    ])
+routes_list = [
+    web.post('/login', views.handler_login),
+    web.post('/logout', views.handler_logout),
+    web.post('/user', views.create_user),
+    web.get('/user', views.read_user),
+    web.patch('/user', views.update_user),
+    web.delete('/user', views.delete_user),
+]
