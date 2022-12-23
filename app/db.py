@@ -1,23 +1,28 @@
-import datetime
-
 from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy import MetaData, Table, Column, ForeignKey, Integer, String, Date
+from sqlalchemy import MetaData, Table, Column, Sequence, ForeignKey, Integer, String, Date
 
 from passlib.hash import sha256_crypt
 from datetime import date
 
+from .settings import config
+
 
 metadata = MetaData()
+engine = create_async_engine(
+    config['db_url'],
+    echo=True,
+    future=True,
+)
 
 
 user = Table(
     'user',
     metadata,
-    Column('id', Integer, primary_key=True),
+    Column('id', Integer, Sequence('some_id_seq', start=2), primary_key=True),
     Column('name', String(32)),
     Column('surname', String(32)),
-    Column('login', String(128), unique=True),
-    Column('password', String(256)),
+    Column('login', String(128), unique=True, nullable=False),
+    Column('password', String(256), nullable=False),
     Column('date_of_birth', Date),
     Column('permissions', ForeignKey('permissions.id', ondelete='SET NULL'), default=3),
 )
@@ -27,18 +32,8 @@ permissions = Table(
     'permissions',
     metadata,
     Column('id', Integer, primary_key=True),
-    Column('perm_name', String(10)),
+    Column('perm_name', String(10), nullable=False),
 )
-
-
-async def setup_db(app):
-    db_url = app['config']['db_url']
-    engine = create_async_engine(
-        db_url,
-        echo=True,
-        future=True,
-    )
-    app['db'] = engine
 
 
 async def create_admin(engine):
@@ -50,7 +45,7 @@ async def create_admin(engine):
                 'surname': 'admin',
                 'login': 'admin',
                 'password': sha256_crypt.using().hash('admin'),
-                'date_of_birth': datetime.date(1970, 1, 1),
+                'date_of_birth': date.fromisoformat('1970-01-01'),
                 'permissions': 2,
             }
         )

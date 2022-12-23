@@ -13,7 +13,8 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
     async def authorized_userid(self, identity):
         async with self.engine.connect() as conn:
             ret = await conn.scalar(
-                sa.select(db.user, db.permissions).where(
+                sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+                .where(
                     sa.and_(
                         db.user.c.permissions == db.permissions.c.id,
                         db.user.c.login == identity,
@@ -21,15 +22,16 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                     )
                 )
             )
-            if ret:
-                return identity
-            else:
-                return None
+        if ret:
+            return identity
+        else:
+            return None
 
     async def permits(self, identity, permission, context=None):
         async with self.engine.connect() as conn:
             ret = await conn.execute(
-                sa.select(db.user, db.permissions).where(
+                sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+                .where(
                     sa.and_(
                         db.user.c.permissions == db.permissions.c.id,
                         db.user.c.login == identity,
@@ -37,18 +39,19 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                     )
                 )
             )
-            user = ret.fetchone()
-            if user is not None:
-                perm = user[8]
-                if perm == permission:
-                    return True
-            return False
+        user = ret.fetchone()
+        if user is not None:
+            perm = user[2]
+            if perm == permission:
+                return True
+        return False
 
 
 async def check_credentials(engine, login, password):
     async with engine.connect() as conn:
         ret = await conn.execute(
-            sa.select(db.user, db.permissions).where(
+            sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+            .where(
                 sa.and_(
                     db.user.c.permissions == db.permissions.c.id,
                     db.user.c.login == login,
@@ -56,8 +59,8 @@ async def check_credentials(engine, login, password):
                 )
             )
         )
-        user = ret.fetchone()
-        if user is not None:
-            hashed_password = user[4]
-            return sha256_crypt.verify(password, hashed_password)
-        return False
+    user = ret.fetchone()
+    if user is not None:
+        hashed_password = user[1]
+        return sha256_crypt.verify(password, hashed_password)
+    return False

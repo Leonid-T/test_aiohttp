@@ -1,14 +1,17 @@
 from aiohttp import web
-from aiohttp_security import remember, forget, check_authorized
+from aiohttp_security import remember, forget, check_authorized, check_permission
+
+from json.decoder import JSONDecodeError
 
 from .db_auth import check_credentials
+from .db_api import User
 
 
-async def handler_login(request):
+async def login(request):
     invalid_response = web.json_response({'error': 'Invalid username/password combination'}, status=400)
     try:
         data = await request.json()
-    except Exception:
+    except JSONDecodeError:
         return invalid_response
     login = data.get('login')
     password = data.get('password')
@@ -25,7 +28,7 @@ async def handler_login(request):
     return invalid_response
 
 
-async def handler_logout(request):
+async def logout(request):
     await check_authorized(request)
     response = web.json_response(status=200)
     await forget(request, response)
@@ -33,20 +36,50 @@ async def handler_logout(request):
 
 
 async def create_user(request):
-    data = {'status': 'success'}
-    return web.json_response(data)
+    await check_authorized(request)
+    await check_permission(request, 'admin')
+    invalid_response = web.json_response({'error': 'Invalid data'}, status=400)
+    try:
+        user_data = await request.json()
+    except JSONDecodeError:
+        return invalid_response
+    error = await User.create(user_data)
+    if error:
+        return invalid_response
+    return web.json_response(status=200)
+
+
+async def read_user_all(request):
+    await check_authorized(request)
+    users = await User.read_all()
+    return web.json_response(users, status=200)
 
 
 async def read_user(request):
-    data = {'status': 'success'}
-    return web.json_response(data)
+    await check_authorized(request)
+    slug = request.match_info.get('slug')
+    user = await User.read(slug)
+    return web.json_response(user, status=200)
 
 
 async def update_user(request):
-    data = {'status': 'success'}
-    return web.json_response(data)
+    await check_authorized(request)
+    await check_permission(request, 'admin')
+    invalid_response = web.json_response({'error': 'Invalid data'}, status=400)
+    try:
+        user_data = await request.json()
+    except JSONDecodeError:
+        return invalid_response
+    slug = request.match_info.get('slug')
+    error = await User.update(slug, user_data)
+    if error:
+        return invalid_response
+    return web.json_response(status=200)
 
 
 async def delete_user(request):
-    data = {'status': 'success'}
-    return web.json_response(data)
+    await check_authorized(request)
+    await check_permission(request, 'admin')
+    slug = request.match_info.get('slug')
+    await User.delete(slug)
+    return web.json_response(status=200)

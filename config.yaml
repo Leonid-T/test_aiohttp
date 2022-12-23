@@ -2,5 +2,7 @@
 
 db_url: 'postgresql+asyncpg://postgres:admin@localhost:5432/test_aiohttp'
 
+log_path: 'app.log'
+
 # length must be 32 characters
 cookie_key: 'fa5s3nuzsfhzlgnfdgv86g1rdg7sd361'
