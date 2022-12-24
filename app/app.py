@@ -17,7 +17,7 @@ async def create_app():
     app.add_routes(routes_list)
     app.on_startup.append(on_start)
     app.on_shutdown.append(on_shutdown)
-    setup_swagger(app, swagger_url=config['docs_url'])
+    setup_swagger(app, swagger_url=app['config']['docs_url'])
     return app
 
 

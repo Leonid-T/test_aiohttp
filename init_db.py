@@ -10,10 +10,12 @@ async def create_tables(engine):
 
 
 async def async_main():
-    await create_tables(engine)
-    await create_def_permissions(engine)
-    await create_admin(engine)
-    await engine.dispose()
+    try:
+        await create_tables(engine)
+        await create_def_permissions(engine)
+        await create_admin(engine)
+    finally:
+        await engine.dispose()
 
 
 if __name__ == '__main__':
