@@ -47,8 +47,8 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         return False
 
 
-async def check_credentials(engine, login, password):
-    async with engine.connect() as conn:
+async def check_credentials(login, password):
+    async with db.engine.connect() as conn:
         ret = await conn.execute(
             sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
             .where(

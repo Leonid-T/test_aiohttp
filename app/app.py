@@ -3,6 +3,7 @@ from aiohttp_session import setup as setup_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
+from aiohttp_swagger import setup_swagger
 
 from .db import engine
 from .db_auth import DBAuthorizationPolicy
@@ -16,6 +17,7 @@ async def create_app():
     app.add_routes(routes_list)
     app.on_startup.append(on_start)
     app.on_shutdown.append(on_shutdown)
+    setup_swagger(app, swagger_url='/backend')
     return app
 
 

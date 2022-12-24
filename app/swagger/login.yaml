@@ -1,0 +1,29 @@
+tags:
+- Authorization
+summary: User login
+description: This can only be done by an unblocked users.
+operationId: login
+produces:
+- application/json
+parameters:
+- in: body
+  name: body
+  description: User authorization
+  required: false
+  schema:
+    type: object
+    properties:
+      login:
+        type: string
+      password:
+        type: string
+responses:
+  '200':
+    description: successful operation
+  '400':
+    description: Invalid username/password combination or this user is blocked
+    schema:
+      type: object
+      properties:
+        error:
+          type: string
