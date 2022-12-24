@@ -27,19 +27,16 @@ class Model(ABC):
 
 class User(Model):
     model = db.user
+    sub_model = db.permissions
     engine = db.engine
 
     @classmethod
     async def create(cls, data):
-        password = data.get('password')
-        if not password:
+        await cls._set_password(data)
+        if await cls._set_date_of_birth(data):
             return True
-        data['password'] = sha256_crypt.using().hash(password)
-        if data.get('date_of_birth'):
-            try:
-                data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
-            except ValueError:
-                return True
+        if await cls._set_permissions(data):
+            return True
         try:
             async with cls.engine.connect() as conn:
                 await conn.execute(
@@ -57,7 +54,15 @@ class User(Model):
             where = cls.model.c.login == slug
         async with cls.engine.connect() as conn:
             ret = await conn.execute(
-                cls.model.select().where(where)
+                sa.select(
+                    cls.model.c.id,
+                    cls.model.c.name,
+                    cls.model.c.surname,
+                    cls.model.c.login,
+                    cls.model.c.password,
+                    cls.model.c.date_of_birth,
+                    cls.sub_model.c.perm_name,
+                ).where(sa.and_(cls.model.c.permissions == cls.sub_model.c.id, where))
             )
         row = ret.fetchone()
         if row:
@@ -67,24 +72,27 @@ class User(Model):
     async def read_all(cls):
         async with cls.engine.connect() as conn:
             ret = await conn.execute(
-                cls.model.select()
+                sa.select(
+                    cls.model.c.id,
+                    cls.model.c.name,
+                    cls.model.c.surname,
+                    cls.model.c.login,
+                    cls.model.c.password,
+                    cls.model.c.date_of_birth,
+                    cls.sub_model.c.perm_name,
+                ).where(cls.model.c.permissions == cls.sub_model.c.id)
             )
         users = [await cls._create_user_from_row(row) for row in ret]
         return users
 
     @classmethod
     async def update(cls, slug, data):
-        if data.get('password'):
-            data['password'] = sha256_crypt.using().hash(data['password'])
-        if data.get('date_of_birth'):
-            try:
-                data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
-            except ValueError:
-                return True
-        if slug.isdigit():
-            where = cls.model.c.id == int(slug)
-        else:
-            where = cls.model.c.login == slug
+        await cls._set_password(data)
+        if await cls._set_date_of_birth(data):
+            return True
+        if await cls._set_permissions(data):
+            return True
+        where = await cls._set_where(slug)
         try:
             async with cls.engine.connect() as conn:
                 await conn.execute(
@@ -96,10 +104,7 @@ class User(Model):
 
     @classmethod
     async def delete(cls, slug):
-        if slug.isdigit():
-            where = cls.model.c.id == int(slug)
-        else:
-            where = cls.model.c.login == slug
+        where = await cls._set_where(slug)
         async with cls.engine.connect() as conn:
             await conn.execute(
                 cls.model.delete().where(where)
@@ -117,3 +122,37 @@ class User(Model):
             'date_of_birth': str(row[5]),
             'permissions': row[6],
         }
+
+    @classmethod
+    async def _set_password(cls, data):
+        if data.get('password'):
+            data['password'] = sha256_crypt.using().hash(data['password'])
+
+    @classmethod
+    async def _set_date_of_birth(cls, data):
+        if data.get('date_of_birth'):
+            try:
+                data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
+            except ValueError:
+                return True
+
+    @classmethod
+    async def _set_permissions(cls, data):
+        if data.get('permissions'):
+            perm = data['permissions']
+            async with cls.engine.connect() as conn:
+                id = await conn.scalar(
+                    sa.select(cls.sub_model.c.id)
+                    .where(cls.sub_model.c.perm_name == perm)
+                )
+            if id:
+                data['permissions'] = id
+            else:
+                return True
+
+    @classmethod
+    async def _set_where(cls, slug):
+        if slug.isdigit():
+            return cls.model.c.id == int(slug)
+        else:
+            return cls.model.c.login == slug
