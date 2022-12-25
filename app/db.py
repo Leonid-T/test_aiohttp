@@ -36,6 +36,17 @@ permissions = Table(
 )
 
 
+async def create_tables(engine):
+    async with engine.begin() as conn:
+        await conn.run_sync(metadata.drop_all)
+        await conn.run_sync(metadata.create_all)
+
+
+async def delete_tables(engine):
+    async with engine.begin() as conn:
+        await conn.run_sync(metadata.drop_all)
+
+
 async def create_admin(engine):
     async with engine.connect() as conn:
         await conn.execute(

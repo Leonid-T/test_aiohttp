@@ -1,12 +1,6 @@
 import asyncio
 
-from app.db import metadata, engine, create_def_permissions, create_admin
-
-
-async def create_tables(engine):
-    async with engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
-        await conn.run_sync(metadata.create_all)
+from app.db import engine, create_tables, create_def_permissions, create_admin
 
 
 async def async_main():

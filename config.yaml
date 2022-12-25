@@ -2,6 +2,8 @@
 
 db_url: 'postgresql+asyncpg://postgres:admin@localhost:5432/test_aiohttp'
 
+db_test_url: 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db'
+
 log_path: 'app.log'
 
 # length must be 32 characters

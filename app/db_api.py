@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+
 import sqlalchemy as sa
 
 from passlib.hash import sha256_crypt
