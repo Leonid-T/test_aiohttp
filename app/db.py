@@ -8,11 +8,6 @@ from .settings import config
 
 
 metadata = MetaData()
-engine = create_async_engine(
-    config['db_url'],
-    echo=True,
-    future=True,
-)
 
 
 user = Table(
@@ -34,6 +29,15 @@ permissions = Table(
     Column('id', Integer, primary_key=True),
     Column('perm_name', String(10), nullable=False),
 )
+
+
+async def create_db_engine(db_url=config['db_url'], echo=True):
+    engine = create_async_engine(
+        db_url,
+        echo=echo,
+        future=True,
+    )
+    return engine
 
 
 async def create_tables(engine):

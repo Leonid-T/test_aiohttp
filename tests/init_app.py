@@ -4,8 +4,6 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
 
-from sqlalchemy.ext.asyncio import create_async_engine
-
 from app.settings import config
 from app.routes import routes_list
 from app.db_auth import DBAuthorizationPolicy
@@ -13,11 +11,8 @@ from app import db
 
 
 async def get_db():
-    engine = create_async_engine(
-        config['db_test_url'],
-        echo=False,
-        future=True,
-    )
+    db_url = config['db_test_url']
+    engine = await db.create_db_engine(db_url=db_url, echo=False)
     await db.create_tables(engine)
     await db.create_def_permissions(engine)
     await db.create_admin(engine)

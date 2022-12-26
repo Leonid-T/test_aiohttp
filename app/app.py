@@ -5,7 +5,7 @@ from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
 from aiohttp_swagger import setup_swagger
 
-from .db import engine
+from .db import create_db_engine
 from .db_auth import DBAuthorizationPolicy
 from .routes import routes_list
 from .settings import config
@@ -22,7 +22,7 @@ async def create_app():
 
 
 async def on_start(app):
-    app['db'] = engine
+    app['db'] = await create_db_engine()
     setup_session(app, EncryptedCookieStorage(bytes(app['config']['cookie_key'], 'utf-8')))
     setup_security(app, SessionIdentityPolicy(), DBAuthorizationPolicy(app['db']))
 
