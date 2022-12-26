@@ -1,5 +1,6 @@
 .idea/
 env/
+data/
 **/__pycache__/**
 **.log
 **/.pytest_cache/**
