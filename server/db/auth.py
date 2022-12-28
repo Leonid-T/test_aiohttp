@@ -3,7 +3,7 @@ from aiohttp_security.abc import AbstractAuthorizationPolicy
 import sqlalchemy as sa
 from passlib.hash import sha256_crypt
 
-from . import db
+from . import models
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
@@ -13,12 +13,12 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
     async def authorized_userid(self, identity):
         async with self.engine.connect() as conn:
             ret = await conn.scalar(
-                sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+                sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
                 .where(
                     sa.and_(
-                        db.user.c.permissions == db.permissions.c.id,
-                        db.user.c.login == identity,
-                        db.permissions.c.perm_name != 'block'
+                        models.user.c.permissions == models.permissions.c.id,
+                        models.user.c.login == identity,
+                        models.permissions.c.perm_name != 'block'
                     )
                 )
             )
@@ -30,12 +30,12 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
     async def permits(self, identity, permission, context=None):
         async with self.engine.connect() as conn:
             ret = await conn.execute(
-                sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+                sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
                 .where(
                     sa.and_(
-                        db.user.c.permissions == db.permissions.c.id,
-                        db.user.c.login == identity,
-                        db.permissions.c.perm_name != 'block'
+                        models.user.c.permissions == db.permissions.c.id,
+                        models.user.c.login == identity,
+                        models.permissions.c.perm_name != 'block'
                     )
                 )
             )
@@ -50,12 +50,12 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
 async def check_credentials(engine, login, password):
     async with engine.connect() as conn:
         ret = await conn.execute(
-            sa.select(db.user.c.login, db.user.c.password, db.permissions.c.perm_name)
+            sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
             .where(
                 sa.and_(
-                    db.user.c.permissions == db.permissions.c.id,
-                    db.user.c.login == login,
-                    db.permissions.c.perm_name != 'block'
+                    models.user.c.permissions == models.permissions.c.id,
+                    models.user.c.login == login,
+                    models.permissions.c.perm_name != 'block'
                 )
             )
         )

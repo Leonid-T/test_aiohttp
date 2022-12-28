@@ -1,6 +1,6 @@
 import asyncio
 
-from app.db import create_db_engine, create_tables, create_def_permissions, create_admin
+from server.db.opt import create_db_engine, create_tables, create_def_permissions, create_admin
 
 
 async def async_main():

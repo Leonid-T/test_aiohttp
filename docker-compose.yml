@@ -3,17 +3,19 @@ volumes:
 
 services:
   postgres:
-    image: postgres:latest
+    build: ./postgresql
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD=admin
     ports:
       - 5432:5432
     volumes:
-      - .:/docker-entrypoint-initdb.d
-      - .:/var/lib/postgresql
-  web:
+      - ./postgresql-data:/var/lib/postgresql
+
+  server:
     build: ./
     restart: unless-stopped
     ports:
       - 8080:8080
+    depends_on:
+      - postgres

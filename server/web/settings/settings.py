@@ -3,8 +3,8 @@ import yaml
 import logging
 
 
-BASE_DIR = pathlib.Path(__file__).parent.parent
-config_path = BASE_DIR / 'config.yaml'
+BASE_DIR = pathlib.Path(__file__).parent.parent.parent
+config_path = BASE_DIR / 'web' / 'settings' / 'config.yaml'
 
 
 def get_config(path):

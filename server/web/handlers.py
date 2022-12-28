@@ -4,11 +4,11 @@ from aiohttp_swagger import swagger_path
 
 from json.decoder import JSONDecodeError
 
-from .db_auth import check_credentials
-from .db_api import User
+from db.auth import check_credentials
+from db.api import User
 
 
-@swagger_path('app/swagger/login.yaml')
+@swagger_path('web/swagger/login.yaml')
 async def login(request):
     invalid_response = web.json_response(
         {'error': 'Invalid username/password combination or this user is blocked'}, status=400
@@ -32,7 +32,7 @@ async def login(request):
     return invalid_response
 
 
-@swagger_path('app/swagger/logout.yaml')
+@swagger_path('web/swagger/logout.yaml')
 async def logout(request):
     await check_authorized(request)
     response = web.json_response(status=200)
@@ -40,7 +40,7 @@ async def logout(request):
     return response
 
 
-@swagger_path('app/swagger/create_user.yaml')
+@swagger_path('web/swagger/create_user.yaml')
 async def create_user(request):
     await check_authorized(request)
     await check_permission(request, 'admin')
@@ -59,7 +59,7 @@ async def create_user(request):
     return web.json_response(status=200)
 
 
-@swagger_path('app/swagger/read_user_all.yaml')
+@swagger_path('web/swagger/read_user_all.yaml')
 async def read_user_all(request):
     await check_authorized(request)
     engine = request.app['db']
@@ -68,7 +68,7 @@ async def read_user_all(request):
     return web.json_response(users_list, status=200)
 
 
-@swagger_path('app/swagger/read_user.yaml')
+@swagger_path('web/swagger/read_user.yaml')
 async def read_user(request):
     await check_authorized(request)
     slug = request.match_info.get('slug')
@@ -78,7 +78,7 @@ async def read_user(request):
     return web.json_response(user_data, status=200)
 
 
-@swagger_path('app/swagger/update_user.yaml')
+@swagger_path('web/swagger/update_user.yaml')
 async def update_user(request):
     await check_authorized(request)
     await check_permission(request, 'admin')
@@ -98,7 +98,7 @@ async def update_user(request):
     return web.json_response(status=200)
 
 
-@swagger_path('app/swagger/delete_user.yaml')
+@swagger_path('web/swagger/delete_user.yaml')
 async def delete_user(request):
     await check_authorized(request)
     await check_permission(request, 'admin')

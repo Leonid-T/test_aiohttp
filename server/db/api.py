@@ -1,34 +1,14 @@
-from abc import ABC, abstractmethod
-
 import sqlalchemy as sa
 
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from . import db
+from . import models
 
 
-class Model(ABC):
-    @abstractmethod
-    async def create(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    async def read(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    async def update(self, *args, **kwargs):
-        pass
-
-    @abstractmethod
-    async def delete(self, *args, **kwargs):
-        pass
-
-
-class User(Model):
-    model = db.user
-    sub_model = db.permissions
+class User:
+    model = models.user
+    sub_model = models.permissions
 
     def __init__(self, engine):
         self.engine = engine
@@ -135,12 +115,12 @@ class User(Model):
         if data.get('permissions'):
             perm = data['permissions']
             async with self.engine.connect() as conn:
-                id = await conn.scalar(
+                perm_id = await conn.scalar(
                     sa.select(self.sub_model.c.id)
                     .where(self.sub_model.c.perm_name == perm)
                 )
-            if id:
-                data['permissions'] = id
+            if perm_id:
+                data['permissions'] = perm_id
             else:
                 return True
 

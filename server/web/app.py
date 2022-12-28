@@ -5,10 +5,11 @@ from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
 from aiohttp_swagger import setup_swagger
 
-from .db import create_db_engine
-from .db_auth import DBAuthorizationPolicy
+from db.opt import create_db_engine
+from db.auth import DBAuthorizationPolicy
+from web.settings.settings import config
+
 from .routes import routes_list
-from .settings import config
 
 
 async def create_app():
