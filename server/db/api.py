@@ -29,10 +29,7 @@ class User:
             return True
 
     async def read(self, slug):
-        if slug.isdigit():
-            where = self.model.c.id == int(slug)
-        else:
-            where = self.model.c.login == slug
+        where = await self._set_where(slug)
         async with self.engine.connect() as conn:
             ret = await conn.execute(
                 sa.select(
@@ -101,28 +98,30 @@ class User:
         }
 
     async def _set_password(self, data):
-        if data.get('password'):
-            data['password'] = sha256_crypt.using().hash(data['password'])
+        if not data.get('password'):
+            return
+        data['password'] = sha256_crypt.using().hash(data['password'])
 
     async def _set_date_of_birth(self, data):
-        if data.get('date_of_birth'):
-            try:
-                data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
-            except ValueError:
-                return True
+        if not data.get('date_of_birth'):
+            return
+        try:
+            data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
+        except ValueError:
+            return True
 
     async def _set_permissions(self, data):
-        if data.get('permissions'):
-            perm = data['permissions']
-            async with self.engine.connect() as conn:
-                perm_id = await conn.scalar(
-                    sa.select(self.sub_model.c.id)
-                    .where(self.sub_model.c.perm_name == perm)
-                )
-            if perm_id:
-                data['permissions'] = perm_id
-            else:
-                return True
+        if not data.get('permissions'):
+            return
+        perm = data['permissions']
+        async with self.engine.connect() as conn:
+            perm_id = await conn.scalar(
+                sa.select(self.sub_model.c.id)
+                .where(self.sub_model.c.perm_name == perm)
+            )
+        if not perm_id:
+            return True
+        data['permissions'] = perm_id
 
     async def _set_where(self, slug):
         if slug.isdigit():

@@ -5,7 +5,6 @@ from web.app import create_app
 
 def main():
     app = create_app()
-    # app = web.Application()
     web.run_app(app)
 
 

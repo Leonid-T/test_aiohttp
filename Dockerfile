@@ -1,5 +1,6 @@
 FROM python:3.10
-WORKDIR /usr/src/app
+ENV PYTHONPATH=/usr/src/app
+WORKDIR ${PYTHONPATH}
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 COPY ./server ./server

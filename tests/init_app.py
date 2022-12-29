@@ -4,18 +4,18 @@ from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
 
-from app.settings import config
-from app.routes import routes_list
-from app.db_auth import DBAuthorizationPolicy
-from app import db
+from server.web.settings.conf import config
+from server.web.routes import routes_list
+from server.db.auth import DBAuthorizationPolicy
+from server.db import opt
 
 
 async def get_db():
-    db_url = config['db_test_url']
-    engine = await db.create_db_engine(db_url=db_url, echo=False)
-    await db.create_tables(engine)
-    await db.create_def_permissions(engine)
-    await db.create_admin(engine)
+    db_url = 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db'
+    engine = await opt.create_db_engine(db_url=db_url, echo=False)
+    await opt.create_tables(engine)
+    await opt.create_def_permissions(engine)
+    await opt.create_admin(engine)
     return engine
 
 
@@ -35,5 +35,5 @@ async def on_start(app):
 
 async def on_shutdown(app):
     engine = app['db']
-    await db.delete_tables(engine)
+    await opt.delete_tables(engine)
     await engine.dispose()

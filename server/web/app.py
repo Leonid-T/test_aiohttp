@@ -3,12 +3,13 @@ from aiohttp_session import setup as setup_session
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 from aiohttp_security import setup as setup_security
 from aiohttp_security import SessionIdentityPolicy
+
 from aiohttp_swagger import setup_swagger
 
-from db.opt import create_db_engine
-from db.auth import DBAuthorizationPolicy
-from web.settings.settings import config
+from server.db.opt import create_db_engine
+from server.db.auth import DBAuthorizationPolicy
 
+from .settings.conf import config
 from .routes import routes_list
 
 

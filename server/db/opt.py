@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from web.settings.settings import config
+from server.web.settings.conf import config
 from .models import metadata, user, permissions
 
 

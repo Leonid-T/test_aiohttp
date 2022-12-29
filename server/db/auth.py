@@ -33,7 +33,7 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                 sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
                 .where(
                     sa.and_(
-                        models.user.c.permissions == db.permissions.c.id,
+                        models.user.c.permissions == models.permissions.c.id,
                         models.user.c.login == identity,
                         models.permissions.c.perm_name != 'block'
                     )
