@@ -119,8 +119,8 @@ class UserView(web.View):
               password:
                 type: string
               date_of_birth:
-                type: string
-                format: YYYY-MM-DD
+                type: date
+                format: iso
               permissions:
                 type: string
                 format: block, admin, read
@@ -185,8 +185,8 @@ class UserView(web.View):
                 password:
                   type: string
                 date_of_birth:
-                  type: string
-                  format: YYYY-MM-DD
+                  type: date
+                  format: iso
                 permissions:
                   type: string
                   format: block, admin, read
@@ -231,8 +231,8 @@ class OneUserView(web.View):
                 password:
                   type: string
                 date_of_birth:
-                  type: string
-                  format: YYYY-MM-DD
+                  type: date
+                  format: iso
                 permissions:
                   type: string
                   format: block, admin, read
@@ -278,8 +278,8 @@ class OneUserView(web.View):
               password:
                 type: string
               date_of_birth:
-                type: string
-                format: YYYY-MM-DD
+                type: date
+                format: iso
               permissions:
                 type: string
                 format: block, admin, read
