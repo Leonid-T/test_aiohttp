@@ -47,10 +47,13 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
         return False
 
 
-async def check_credentials(engine, login, password):
+async def check_credentials(engine, data):
+    login = data['login']
+    password = data['password']
+
     async with engine.connect() as conn:
-        ret = await conn.execute(
-            sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
+        hashed_password = await conn.scalar(
+            sa.select(models.user.c.password)
             .where(
                 sa.and_(
                     models.user.c.permissions == models.permissions.c.id,
@@ -59,8 +62,7 @@ async def check_credentials(engine, login, password):
                 )
             )
         )
-    user = ret.fetchone()
-    if user is not None:
-        hashed_password = user[1]
+
+    if hashed_password is not None:
         return sha256_crypt.verify(password, hashed_password)
     return False

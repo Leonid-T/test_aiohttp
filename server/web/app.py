@@ -11,6 +11,7 @@ from server.db.auth import DBAuthorizationPolicy
 
 from .settings.conf import config
 from .routes import routes_list
+from .middlewares import error_middleware
 
 
 async def create_app():
@@ -19,6 +20,7 @@ async def create_app():
     app.add_routes(routes_list)
     app.on_startup.append(on_start)
     app.on_shutdown.append(on_shutdown)
+    app.middlewares.append(error_middleware)
     setup_swagger(app, swagger_url=app['config']['docs_url'])
     return app
 

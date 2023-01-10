@@ -3,11 +3,13 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from server.web.settings.conf import config
+from server.web.settings.conf import config, DEBUG
 from .models import metadata, user, permissions
 
 
 async def create_db_engine(db_url=config['db_url'], echo=True):
+    if DEBUG:
+        db_url = config['debug_db_url']
     engine = create_async_engine(
         db_url,
         echo=echo,

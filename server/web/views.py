@@ -1,10 +1,10 @@
 from aiohttp import web
 from aiohttp_security import remember, forget, check_authorized, check_permission
 
-from json.decoder import JSONDecodeError
-
 from server.db.auth import check_credentials
 from server.db.api import User
+
+from .validations import json_validate_login, json_validate_create_user, json_validate_update_user
 
 
 async def login(request):
@@ -42,26 +42,18 @@ async def login(request):
             error:
               type: string
     """
-    invalid_response = web.json_response(
-        {'error': 'Invalid username/password combination or this user is blocked'}, status=400
-    )
-    try:
-        data = await request.json()
-    except JSONDecodeError:
-        return invalid_response
-    login = data.get('login')
-    password = data.get('password')
+    data = await request.json()
+    await json_validate_login(data)
+
     engine = request.app['db']
+    if not await check_credentials(engine, data):
+        return web.json_response(
+            {'error': 'Invalid username/password combination or this user is blocked'}, status=400
+        )
 
-    if not (isinstance(login, str) and isinstance(password, str)):
-        return invalid_response
-
-    if await check_credentials(engine, login, password):
-        response = web.json_response(status=200)
-        await remember(request, response, login)
-        return response
-
-    return invalid_response
+    response = web.json_response(status=200)
+    await remember(request, response, data['login'])
+    return response
 
 
 async def logout(request):
@@ -141,19 +133,16 @@ class UserView(web.View):
         """
         await check_authorized(self.request)
         await check_permission(self.request, 'admin')
-        invalid_response = web.json_response({'error': 'Invalid data'}, status=400)
-        try:
-            user_data = await self.request.json()
-        except JSONDecodeError:
-            return invalid_response
+
+        user_data = await self.request.json()
+        await json_validate_create_user(user_data)
 
         engine = self.request.app['db']
-        user = User(engine)
-        error = await user.create(user_data)
-        if error:
-            return invalid_response
+        async with engine.connect() as conn:
+            user = User()
+            await user.create(conn, user_data)
 
-        return web.json_response(status=200)
+            return web.json_response(status=200)
 
     async def get(self):
         """
@@ -194,10 +183,12 @@ class UserView(web.View):
             description: you aren't authorized
         """
         await check_authorized(self.request)
+
         engine = self.request.app['db']
-        user = User(engine)
-        users_list = await user.read_all()
-        return web.json_response(users_list, status=200)
+        async with engine.connect() as conn:
+            user = User()
+            users_list = await user.read_all(conn)
+            return web.json_response(users_list, status=200)
 
 
 class OneUserView(web.View):
@@ -240,11 +231,14 @@ class OneUserView(web.View):
             description: you aren't authorized
         """
         await check_authorized(self.request)
+
         slug = self.request.match_info.get('slug')
+
         engine = self.request.app['db']
-        user = User(engine)
-        user_data = await user.read(slug)
-        return web.json_response(user_data, status=200)
+        async with engine.connect() as conn:
+            user = User()
+            user_data = await user.read(conn, slug)
+            return web.json_response(user_data, status=200)
 
     async def patch(self):
         """
@@ -300,20 +294,16 @@ class OneUserView(web.View):
         """
         await check_authorized(self.request)
         await check_permission(self.request, 'admin')
-        invalid_response = web.json_response({'error': 'Invalid data'}, status=400)
-        try:
-            user_data = await self.request.json()
-        except JSONDecodeError:
-            return invalid_response
+
+        user_data = await self.request.json()
+        await json_validate_update_user(user_data)
 
         slug = self.request.match_info.get('slug')
         engine = self.request.app['db']
-        user = User(engine)
-        error = await user.update(slug, user_data)
-        if error:
-            return invalid_response
-
-        return web.json_response(status=200)
+        async with engine.connect() as conn:
+            user = User()
+            await user.update(conn, slug, user_data)
+            return web.json_response(status=200)
 
     async def delete(self):
         """
@@ -335,8 +325,10 @@ class OneUserView(web.View):
         """
         await check_authorized(self.request)
         await check_permission(self.request, 'admin')
+
         slug = self.request.match_info.get('slug')
         engine = self.request.app['db']
-        user = User(engine)
-        await user.delete(slug)
-        return web.json_response(status=200)
+        async with engine.connect() as conn:
+            user = User()
+            await user.delete(conn, slug)
+            return web.json_response(status=200)

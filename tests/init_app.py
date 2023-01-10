@@ -6,6 +6,7 @@ from aiohttp_security import SessionIdentityPolicy
 
 from server.web.settings.conf import config
 from server.web.routes import routes_list
+from server.web.middlewares import error_middleware
 from server.db.auth import DBAuthorizationPolicy
 from server.db import opt
 
@@ -24,6 +25,7 @@ async def get_app():
     app.add_routes(routes_list)
     app.on_startup.append(on_start)
     app.on_shutdown.append(on_shutdown)
+    app.middlewares.append(error_middleware)
     return app
 
 

@@ -23,7 +23,7 @@ async def test_login_with_invalid_data_1(aiohttp_client):
     })
     assert resp.status == 400
     data = await resp.json()
-    assert data == {'error': 'Invalid username/password combination or this user is blocked'}
+    assert data == {'error': 'Invalid data'}
 
 
 async def test_login_with_invalid_data_2(aiohttp_client):
@@ -34,7 +34,7 @@ async def test_login_with_invalid_data_2(aiohttp_client):
     })
     assert resp.status == 400
     data = await resp.json()
-    assert data == {'error': 'Invalid username/password combination or this user is blocked'}
+    assert data == {'error': 'Invalid data'}
 
 
 async def test_login_with_block_permissions(aiohttp_client):
