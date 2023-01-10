@@ -15,10 +15,11 @@ class User:
         await self._set_date_of_birth(data)
         await self._set_permissions(conn, data)
 
-        await conn.execute(
+        ret = await conn.execute(
             self.model.insert(), data
         )
         await conn.commit()
+        return ret.rowcount
 
     async def read(self, conn, slug):
         where = await self._set_where(slug)
@@ -57,17 +58,19 @@ class User:
         await self._set_permissions(conn, data)
 
         where = await self._set_where(slug)
-        await conn.execute(
+        ret = await conn.execute(
             self.model.update().values(data).where(where)
         )
         await conn.commit()
+        return ret.rowcount
 
     async def delete(self, conn, slug):
         where = await self._set_where(slug)
-        await conn.execute(
+        ret = await conn.execute(
             self.model.delete().where(where)
         )
         await conn.commit()
+        return ret.rowcount
 
     async def _create_json_from_row(self, row):
         user = dict(row)

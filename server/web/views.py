@@ -140,9 +140,10 @@ class UserView(web.View):
         engine = self.request.app['db']
         async with engine.connect() as conn:
             user = User()
-            await user.create(conn, user_data)
+            if await user.create(conn, user_data):
+                return web.json_response(status=200)
 
-            return web.json_response(status=200)
+        return web.json_response({'error': 'Insert error'}, status=400)
 
     async def get(self):
         """
@@ -302,8 +303,10 @@ class OneUserView(web.View):
         engine = self.request.app['db']
         async with engine.connect() as conn:
             user = User()
-            await user.update(conn, slug, user_data)
-            return web.json_response(status=200)
+            if await user.update(conn, slug, user_data):
+                return web.json_response(status=200)
+
+        return web.json_response({'error': 'Update error'}, status=400)
 
     async def delete(self):
         """
@@ -330,5 +333,7 @@ class OneUserView(web.View):
         engine = self.request.app['db']
         async with engine.connect() as conn:
             user = User()
-            await user.delete(conn, slug)
-            return web.json_response(status=200)
+            if await user.delete(conn, slug):
+                return web.json_response(status=200)
+
+        return web.json_response({'error': 'Delete error'}, status=400)
