@@ -9,7 +9,8 @@ from .models import metadata, user, permissions
 
 async def create_db_engine(db_url=config['db_url'], echo=True):
     if DEBUG:
-        db_url = config['debug_db_url']
+        db_url = config['test_db_url']
+        echo = False
     engine = create_async_engine(
         db_url,
         echo=echo,

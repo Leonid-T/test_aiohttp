@@ -1,8 +1,8 @@
 from aiohttp import web
 from aiohttp_security import remember, forget, check_authorized, check_permission
 
-from server.db.auth import check_credentials
-from server.db.api import User
+from server.store.pg.auth import check_credentials
+from server.store.pg.api import User
 
 from .validations import json_validate_login, json_validate_create_user, json_validate_update_user
 
@@ -138,7 +138,7 @@ class UserView(web.View):
         await json_validate_create_user(user_data)
 
         engine = self.request.app['db']
-        async with engine.connect() as conn:
+        async with engine.begin() as conn:
             user = User()
             if await user.create(conn, user_data):
                 return web.json_response(status=200)
@@ -301,7 +301,7 @@ class OneUserView(web.View):
 
         slug = self.request.match_info.get('slug')
         engine = self.request.app['db']
-        async with engine.connect() as conn:
+        async with engine.begin() as conn:
             user = User()
             if await user.update(conn, slug, user_data):
                 return web.json_response(status=200)
@@ -331,7 +331,7 @@ class OneUserView(web.View):
 
         slug = self.request.match_info.get('slug')
         engine = self.request.app['db']
-        async with engine.connect() as conn:
+        async with engine.begin() as conn:
             user = User()
             if await user.delete(conn, slug):
                 return web.json_response(status=200)

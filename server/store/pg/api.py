@@ -18,7 +18,6 @@ class User:
         ret = await conn.execute(
             self.model.insert(), data
         )
-        await conn.commit()
         return ret.rowcount
 
     async def read(self, conn, slug):
@@ -61,7 +60,6 @@ class User:
         ret = await conn.execute(
             self.model.update().values(data).where(where)
         )
-        await conn.commit()
         return ret.rowcount
 
     async def delete(self, conn, slug):
@@ -69,7 +67,6 @@ class User:
         ret = await conn.execute(
             self.model.delete().where(where)
         )
-        await conn.commit()
         return ret.rowcount
 
     async def _create_json_from_row(self, row):
