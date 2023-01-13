@@ -17,13 +17,38 @@ class PostgresAccessor:
 
     async def _on_connect(self, app):
         self.engine = await create_db_engine()
-        app['db'] = self.engine
+        app.db = self
         setup_session(app, EncryptedCookieStorage(bytes(app['config']['cookie_key'], 'utf-8')))
-        setup_security(app, SessionIdentityPolicy(), DBAuthorizationPolicy(self.engine))
+        setup_security(app, SessionIdentityPolicy(), DBAuthorizationPolicy(self))
 
     async def _on_disconnect(self, app):
         if self.engine is not None:
             await self.engine.dispose()
+
+    def connect(self):
+        if self.engine is None:
+            return
+        _connect = PGConnect(self.engine)
+        return _connect
+
+    def begin(self):
+        _connect = PGConnect(self.engine, True)
+        return _connect
+
+
+class PGConnect:
+    def __init__(self, engine, _is_transaction=False):
+        self.engine = engine
+        self._is_transaction = _is_transaction
+
+    async def __aenter__(self):
+        self.conn = await self.engine.connect()
+        return self.conn
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if self._is_transaction and not exc_type:
+            await self.conn.commit()
+        await self.conn.close()
 
 
 def setup_accessors(app):

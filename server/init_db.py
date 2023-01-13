@@ -6,9 +6,10 @@ from server.store.pg.opt import create_db_engine, create_tables, create_def_perm
 async def async_main():
     engine = await create_db_engine()
     try:
-        await create_tables(engine)
-        await create_def_permissions(engine)
-        await create_admin(engine)
+        async with engine.begin() as conn:
+            await create_tables(conn)
+            await create_def_permissions(conn)
+            await create_admin(conn)
     finally:
         await engine.dispose()
 

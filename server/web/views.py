@@ -45,8 +45,8 @@ async def login(request):
     data = await request.json()
     await json_validate_login(data)
 
-    engine = request.app['db']
-    if not await check_credentials(engine, data):
+    conn = request.app['conn']
+    if not await check_credentials(conn, data):
         return web.json_response(
             {'error': 'Invalid username/password combination or this user is blocked'}, status=400
         )
@@ -73,6 +73,7 @@ async def logout(request):
         description: you aren't authorized
     """
     await check_authorized(request)
+
     response = web.json_response(status=200)
     await forget(request, response)
     return response
@@ -131,17 +132,15 @@ class UserView(web.View):
           '403':
             description: you haven't permissions
         """
-        await check_authorized(self.request)
         await check_permission(self.request, 'admin')
 
         user_data = await self.request.json()
         await json_validate_create_user(user_data)
 
-        engine = self.request.app['db']
-        async with engine.begin() as conn:
-            user = User()
-            if await user.create(conn, user_data):
-                return web.json_response(status=200)
+        conn = self.request.app['conn']
+        user = User()
+        if await user.create(conn, user_data):
+            return web.json_response(status=200)
 
         return web.json_response({'error': 'Insert error'}, status=400)
 
@@ -185,11 +184,10 @@ class UserView(web.View):
         """
         await check_authorized(self.request)
 
-        engine = self.request.app['db']
-        async with engine.connect() as conn:
-            user = User()
-            users_list = await user.read_all(conn)
-            return web.json_response(users_list, status=200)
+        conn = self.request.app['conn']
+        user = User()
+        users_list = await user.read_all(conn)
+        return web.json_response(users_list, status=200)
 
 
 class OneUserView(web.View):
@@ -235,11 +233,10 @@ class OneUserView(web.View):
 
         slug = self.request.match_info.get('slug')
 
-        engine = self.request.app['db']
-        async with engine.connect() as conn:
-            user = User()
-            user_data = await user.read(conn, slug)
-            return web.json_response(user_data, status=200)
+        conn = self.request.app['conn']
+        user = User()
+        user_data = await user.read(conn, slug)
+        return web.json_response(user_data, status=200)
 
     async def patch(self):
         """
@@ -293,18 +290,16 @@ class OneUserView(web.View):
           '403':
             description: you haven't permissions
         """
-        await check_authorized(self.request)
         await check_permission(self.request, 'admin')
 
         user_data = await self.request.json()
         await json_validate_update_user(user_data)
 
         slug = self.request.match_info.get('slug')
-        engine = self.request.app['db']
-        async with engine.begin() as conn:
-            user = User()
-            if await user.update(conn, slug, user_data):
-                return web.json_response(status=200)
+        conn = self.request.app['conn']
+        user = User()
+        if await user.update(conn, slug, user_data):
+            return web.json_response(status=200)
 
         return web.json_response({'error': 'Update error'}, status=400)
 
@@ -326,14 +321,12 @@ class OneUserView(web.View):
           '403':
             description: you haven't permissions
         """
-        await check_authorized(self.request)
         await check_permission(self.request, 'admin')
 
         slug = self.request.match_info.get('slug')
-        engine = self.request.app['db']
-        async with engine.begin() as conn:
-            user = User()
-            if await user.delete(conn, slug):
-                return web.json_response(status=200)
+        conn = self.request.app['conn']
+        user = User()
+        if await user.delete(conn, slug):
+            return web.json_response(status=200)
 
         return web.json_response({'error': 'Delete error'}, status=400)

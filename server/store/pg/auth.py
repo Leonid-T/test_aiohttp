@@ -7,11 +7,11 @@ from . import models
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
-    def __init__(self, engine):
-        self.engine = engine
+    def __init__(self, db):
+        self.db = db
 
     async def authorized_userid(self, identity):
-        async with self.engine.connect() as conn:
+        async with self.db.connect() as conn:
             ret = await conn.scalar(
                 sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
                 .where(
@@ -22,13 +22,11 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                     )
                 )
             )
-        if ret:
-            return identity
-        else:
-            return None
+            if ret:
+                return identity
 
     async def permits(self, identity, permission, context=None):
-        async with self.engine.connect() as conn:
+        async with self.db.connect() as conn:
             ret = await conn.execute(
                 sa.select(models.user.c.login, models.user.c.password, models.permissions.c.perm_name)
                 .where(
@@ -39,20 +37,18 @@ class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
                     )
                 )
             )
-        user = ret.fetchone()
-        if user is not None:
-            perm = user[2]
-            if perm == permission:
-                return True
-        return False
+            user = ret.fetchone()
+            if user is not None:
+                perm = user[2]
+                if perm == permission:
+                    return True
 
 
-async def check_credentials(engine, data):
+async def check_credentials(conn, data):
     login = data['login']
     password = data['password']
 
-    async with engine.connect() as conn:
-        hashed_password = await conn.scalar(
+    hashed_password = await conn.scalar(
             sa.select(models.user.c.password)
             .where(
                 sa.and_(
@@ -65,4 +61,3 @@ async def check_credentials(engine, data):
 
     if hashed_password is not None:
         return sha256_crypt.verify(password, hashed_password)
-    return False

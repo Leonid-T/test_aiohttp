@@ -2,8 +2,6 @@ import pathlib
 import logging
 
 
-DEBUG = False
-
 BASE_DIR = pathlib.Path(__file__).parent.parent.parent
 
 config = {
