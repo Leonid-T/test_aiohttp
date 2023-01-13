@@ -1,41 +1,70 @@
-from aiohttp import web
-from aiohttp_session import setup as setup_session
-from aiohttp_session.cookie_storage import EncryptedCookieStorage
-from aiohttp_security import setup as setup_security
-from aiohttp_security import SessionIdentityPolicy
+import string
+import random
 
-from server.web.settings.conf import config
-from server.web.routes import routes_list
-from server.web.middlewares import error_middleware
-from server.db.auth import DBAuthorizationPolicy
-from server.db import opt
+from sqlalchemy.ext.asyncio import create_async_engine
+from passlib.hash import sha256_crypt
+from datetime import date, timedelta
+
+from server.store.pg.models import user
+from server.store.pg.opt import delete_tables, create_tables, create_def_permissions, create_admin
 
 
-async def get_db():
-    db_url = 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db'
-    engine = await opt.create_db_engine(db_url=db_url, echo=False)
-    await opt.create_tables(engine)
-    await opt.create_def_permissions(engine)
-    await opt.create_admin(engine)
+test_db_url = 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db'
+
+
+async def get_test_db_engine():
+    engine = create_async_engine(
+        test_db_url,
+        echo=False,
+        future=True,
+    )
     return engine
 
 
-async def get_app():
-    app = web.Application()
-    app.add_routes(routes_list)
-    app.on_startup.append(on_start)
-    app.on_shutdown.append(on_shutdown)
-    app.middlewares.append(error_middleware)
-    return app
+async def create_db_data():
+    engine = await get_test_db_engine()
+    try:
+        async with engine.begin() as conn:
+            await create_tables(conn)
+            await create_def_permissions(conn)
+            await create_admin(conn)
+            await filing_db_tables(conn)
+    finally:
+        await engine.dispose()
 
 
-async def on_start(app):
-    app['db'] = await get_db()
-    setup_session(app, EncryptedCookieStorage(bytes(config['cookie_key'], 'utf-8')))
-    setup_security(app, SessionIdentityPolicy(), DBAuthorizationPolicy(app['db']))
+async def delete_db_data():
+    engine = await get_test_db_engine()
+    try:
+        async with engine.begin() as conn:
+            await delete_tables(conn)
+    finally:
+        await engine.dispose()
 
 
-async def on_shutdown(app):
-    engine = app['db']
-    await opt.delete_tables(engine)
-    await engine.dispose()
+async def filing_db_tables(conn):
+    await conn.execute(
+        user.insert(), [
+            {
+                'name': random_text(5),
+                'surname': random_text(5),
+                'login': random_text(4) + str(i),
+                'password': sha256_crypt.using().hash(random_text(5)),
+                'date_of_birth': random_date(),
+            }
+            for i in range(10)
+        ]
+    )
+
+
+def random_text(n):
+    return ''.join([random.choice(string.ascii_letters) for _ in range(n)])
+
+
+def random_date():
+    start_date = date(1920, 1, 1)
+    end_date = date(2020, 1, 1)
+    time_between_dates = end_date - start_date
+    days_between_dates = time_between_dates.days
+    random_number_of_days = random.randrange(days_between_dates)
+    return start_date + timedelta(days=random_number_of_days)
