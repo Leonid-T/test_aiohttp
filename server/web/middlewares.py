@@ -12,6 +12,9 @@ def setup_middlewares(app):
 
 @web.middleware
 async def error_middleware(request, handler):
+    """
+    Middleware for errors related to incorrect data entry.
+    """
     try:
         response = await handler(request)
     except (JSONDecodeError, ValidationError, ValueError, IntegrityError, DBAPIError):
@@ -21,6 +24,9 @@ async def error_middleware(request, handler):
 
 @web.middleware
 async def db_connect_middleware(request, handler):
+    """
+    Creating a database connection.
+    """
     db = request.app.db
     async with db.begin() as conn:
         request.app['conn'] = conn

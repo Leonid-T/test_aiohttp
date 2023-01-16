@@ -4,14 +4,17 @@ import sqlalchemy as sa
 from jsonschema import validate
 from passlib.hash import sha256_crypt
 
-from server.store.pg.models import user
+from server.store.pg.models import user, permissions
 
 
-async def insert_block_user(conn, login, password):
+async def insert_user(conn, login, password, perm='read'):
+    perm_id = await conn.scalar(
+        sa.select(permissions.c.id).where(permissions.c.perm_name == perm)
+    )
     await conn.execute(user.insert(), {
         'login': login,
         'password': sha256_crypt.using().hash(password),
-        'permissions': 1
+        'permissions': perm_id
     })
 
 

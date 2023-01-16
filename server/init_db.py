@@ -4,6 +4,10 @@ from server.store.pg.opt import create_db_engine, create_tables, create_def_perm
 
 
 async def async_main():
+    """
+    Database initialization with url = config['db_url']:
+    creating tables and default data.
+    """
     engine = await create_db_engine()
     try:
         async with engine.begin() as conn:

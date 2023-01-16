@@ -8,8 +8,11 @@ from .models import metadata, user, permissions
 
 
 async def create_db_engine():
+    """
+    Create database engine with default configuration.
+    """
     engine = create_async_engine(
-        config['db_url'],
+        config['db_url'],  # 'test_db_url' may be used by start without docker
         echo=True,
         future=True,
     )
@@ -26,6 +29,9 @@ async def delete_tables(conn):
 
 
 async def create_admin(conn):
+    """
+    Create default admin user.
+    """
     await conn.execute(
         user.insert(), {
             'id': 1,
@@ -40,6 +46,9 @@ async def create_admin(conn):
 
 
 async def create_def_permissions(conn):
+    """
+    Create default permissions.
+    """
     await conn.execute(
         permissions.insert(), [
             {'id': 1, 'perm_name': 'block'},

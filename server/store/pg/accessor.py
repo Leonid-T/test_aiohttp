@@ -8,6 +8,10 @@ from .auth import DBAuthorizationPolicy
 
 
 class PostgresAccessor:
+    """
+    Database connections, get transaction management.
+    """
+
     def __init__(self):
         self.engine = None
 
@@ -18,7 +22,9 @@ class PostgresAccessor:
     async def _on_connect(self, app):
         self.engine = await create_db_engine()
         app.db = self
-        setup_session(app, EncryptedCookieStorage(bytes(app['config']['cookie_key'], 'utf-8')))
+
+        cookie_key = bytes(app['config']['cookie_key'], 'utf-8')
+        setup_session(app, EncryptedCookieStorage(cookie_key))
         setup_security(app, SessionIdentityPolicy(), DBAuthorizationPolicy(self))
 
     async def _on_disconnect(self, app):
@@ -26,17 +32,27 @@ class PostgresAccessor:
             await self.engine.dispose()
 
     def connect(self):
+        """
+        Database connection without commit.
+        """
         if self.engine is None:
             return
         _connect = PGConnect(self.engine)
         return _connect
 
     def begin(self):
+        """
+        Database connection with commit.
+        """
         _connect = PGConnect(self.engine, True)
         return _connect
 
 
 class PGConnect:
+    """
+    Transaction management.
+    """
+
     def __init__(self, engine, _is_transaction=False):
         self.engine = engine
         self._is_transaction = _is_transaction

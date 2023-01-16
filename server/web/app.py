@@ -10,6 +10,9 @@ from .middlewares import setup_middlewares
 
 
 async def create_app():
+    """
+    Server initialization and configuration.
+    """
     app = web.Application()
     app['config'] = config
     app.add_routes(routes_list)

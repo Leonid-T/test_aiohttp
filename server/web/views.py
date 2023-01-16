@@ -9,7 +9,7 @@ from .validations import json_validate_login, json_validate_create_user, json_va
 
 async def login(request):
     """
-    Description end-point
+    User session authorization.
 
     ---
     tags:
@@ -58,7 +58,7 @@ async def login(request):
 
 async def logout(request):
     """
-    Description end-point
+    Session terminate.
 
     ---
     tags:
@@ -82,7 +82,7 @@ async def logout(request):
 class UserView(web.View):
     async def post(self):
         """
-        Description end-point
+        Create new user.
 
         ---
         tags:
@@ -121,7 +121,7 @@ class UserView(web.View):
           '200':
             description: successful operation
           '400':
-            description: Invalid data
+            description: Invalid data, insert error
             schema:
               type: object
               properties:
@@ -139,14 +139,14 @@ class UserView(web.View):
 
         conn = self.request.app['conn']
         user = User()
-        if await user.create(conn, user_data):
-            return web.json_response(status=200)
+        if not await user.create(conn, user_data):
+            return web.json_response({'error': 'Insert error'}, status=400)
 
-        return web.json_response({'error': 'Insert error'}, status=400)
+        return web.json_response(status=200)
 
     async def get(self):
         """
-        Description end-point
+        Get list of users.
 
         ---
         tags:
@@ -193,7 +193,7 @@ class UserView(web.View):
 class OneUserView(web.View):
     async def get(self):
         """
-        Description end-point
+        Get user data by id or login.
 
         ---
         tags:
@@ -228,6 +228,8 @@ class OneUserView(web.View):
                   format: block, admin, read
           '401':
             description: you aren't authorized
+          '404':
+            description: not found
         """
         await check_authorized(self.request)
 
@@ -236,11 +238,14 @@ class OneUserView(web.View):
         conn = self.request.app['conn']
         user = User()
         user_data = await user.read(conn, slug)
+        if not user_data:
+            raise web.HTTPNotFound
+
         return web.json_response(user_data, status=200)
 
     async def patch(self):
         """
-        Description end-point
+        Update user by id or login.
 
         ---
         tags:
@@ -279,7 +284,7 @@ class OneUserView(web.View):
           '200':
             description: successful operation
           '400':
-            description: Invalid data
+            description: Invalid data, update error
             schema:
               type: object
               properties:
@@ -298,14 +303,14 @@ class OneUserView(web.View):
         slug = self.request.match_info.get('slug')
         conn = self.request.app['conn']
         user = User()
-        if await user.update(conn, slug, user_data):
-            return web.json_response(status=200)
+        if not await user.update(conn, slug, user_data):
+            return web.json_response({'error': 'Update error'}, status=400)
 
-        return web.json_response({'error': 'Update error'}, status=400)
+        return web.json_response(status=200)
 
     async def delete(self):
         """
-        Description end-point
+        Delete user by id or login.
 
         ---
         tags:
@@ -316,6 +321,8 @@ class OneUserView(web.View):
         responses:
           '200':
             description: successful operation
+          '400':
+            description: delete error
           '401':
             description: you aren't authorized
           '403':
@@ -326,7 +333,7 @@ class OneUserView(web.View):
         slug = self.request.match_info.get('slug')
         conn = self.request.app['conn']
         user = User()
-        if await user.delete(conn, slug):
-            return web.json_response(status=200)
+        if not await user.delete(conn, slug):
+            return web.json_response({'error': 'Delete error'}, status=400)
 
-        return web.json_response({'error': 'Delete error'}, status=400)
+        return web.json_response(status=200)

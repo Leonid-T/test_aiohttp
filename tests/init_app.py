@@ -9,10 +9,14 @@ from server.store.pg.models import user
 from server.store.pg.opt import delete_tables, create_tables, create_def_permissions, create_admin
 
 
+# change this url to connect to your test base
 test_db_url = 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db'
 
 
 async def get_test_db_engine():
+    """
+    Create database engine with test configuration.
+    """
     engine = create_async_engine(
         test_db_url,
         echo=False,
@@ -43,6 +47,9 @@ async def delete_db_data():
 
 
 async def filing_db_tables(conn):
+    """
+    Filling the user table with test data.
+    """
     await conn.execute(
         user.insert(), [
             {

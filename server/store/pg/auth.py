@@ -7,6 +7,10 @@ from . import models
 
 
 class DBAuthorizationPolicy(AbstractAuthorizationPolicy):
+    """
+    Authorization policy for aiohttp_security.
+    """
+
     def __init__(self, db):
         self.db = db
 

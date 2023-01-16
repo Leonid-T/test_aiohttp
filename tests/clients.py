@@ -9,7 +9,6 @@ from tests.init_app import get_test_db_engine
 class Client:
     def __init__(self, _client):
         self.client = _client
-        self.app = _client.app
 
     async def __aenter__(self):
         self.engine = await get_test_db_engine()
@@ -25,6 +24,9 @@ class Client:
 
 @pytest_asyncio.fixture
 async def client(aiohttp_client, mocker):
+    """
+    Default unauthorized client fixture.
+    """
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:
@@ -36,6 +38,9 @@ async def client(aiohttp_client, mocker):
 
 @pytest_asyncio.fixture
 async def client_admin(aiohttp_client, mocker):
+    """
+    Client fixture with admin permissions.
+    """
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:
@@ -49,6 +54,9 @@ async def client_admin(aiohttp_client, mocker):
 
 @pytest_asyncio.fixture
 async def client_read(aiohttp_client, mocker):
+    """
+    Client fixture with read permissions.
+    """
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:

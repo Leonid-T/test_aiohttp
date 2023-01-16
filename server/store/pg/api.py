@@ -7,6 +7,9 @@ from . import models
 
 
 class User:
+    """
+    Managing user table operations.
+    """
     model = models.user
     sub_model = models.permissions
 
@@ -34,8 +37,7 @@ class User:
             ).where(sa.and_(self.model.c.permissions == self.sub_model.c.id, where))
         )
         row = ret.fetchone()
-        if row:
-            return await self._create_json_from_row(row)
+        return await self._create_json_from_row(row)
 
     async def read_all(self, conn):
         ret = await conn.execute(
@@ -70,6 +72,9 @@ class User:
         return ret.rowcount
 
     async def _create_json_from_row(self, row):
+        """
+        Json serializer for row.
+        """
         user = dict(row)
         user['date_of_birth'] = str(user['date_of_birth'])
         user['permissions'] = user['perm_name']
@@ -77,16 +82,25 @@ class User:
         return user
 
     async def _set_password(self, data):
+        """
+        Password hashing.
+        """
         if not data.get('password'):
             return
         data['password'] = sha256_crypt.using().hash(data['password'])
 
     async def _set_date_of_birth(self, data):
+        """
+        Date setting from iso format.
+        """
         if not data.get('date_of_birth'):
             return
         data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
 
     async def _set_permissions(self, conn, data):
+        """
+        Setting permission id by permission name.
+        """
         if not data.get('permissions'):
             return
 
@@ -101,6 +115,9 @@ class User:
         data['permissions'] = perm_id
 
     async def _set_where(self, slug):
+        """
+        Setting 'sql: where' by id or login.
+        """
         if slug.isdigit():
             return self.model.c.id == int(slug)
         else:
