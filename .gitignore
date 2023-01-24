@@ -1,6 +1,6 @@
 .idea/
 env/
-postgresql-data/data/
+postgresql-data/
 **/__pycache__/**
 **.log
 **/.pytest_cache/**
