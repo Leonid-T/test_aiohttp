@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM python:3.10-slim
 ENV PYTHONPATH=/usr/src/app
 WORKDIR ${PYTHONPATH}
 COPY requirements.txt ./
