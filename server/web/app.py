@@ -1,8 +1,8 @@
 from aiohttp import web
-
-from aiohttp_swagger import setup_swagger
+from aiohttp_pydantic import oas
 
 from server.store.pg.accessor import setup_accessors
+from server.store.pg.api import setup_models
 
 from .settings.conf import config
 from .routes import routes_list
@@ -17,6 +17,7 @@ async def create_app():
     app['config'] = config
     app.add_routes(routes_list)
     setup_accessors(app)
+    setup_models(app)
     setup_middlewares(app)
-    setup_swagger(app, swagger_url=app['config']['docs_url'])
+    oas.setup(app, url_prefix=app['config']['docs_url'])
     return app

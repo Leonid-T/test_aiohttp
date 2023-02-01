@@ -6,16 +6,29 @@ from datetime import date
 from . import models
 
 
+def setup_models(app):
+    app['model'] = {
+        'user': User(),
+    }
+
+
 class User:
     """
     Managing user table operations.
     """
-    model = models.user
-    sub_model = models.permissions
+    _model = models.user
+    _sub_model = models.permissions
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def sub_model(self):
+        return self._sub_model
 
     async def create(self, conn, data):
         await self._set_password(data)
-        await self._set_date_of_birth(data)
         await self._set_permissions(conn, data)
 
         ret = await conn.execute(
@@ -55,7 +68,6 @@ class User:
 
     async def update(self, conn, slug, data):
         await self._set_password(data)
-        await self._set_date_of_birth(data)
         await self._set_permissions(conn, data)
 
         where = await self._set_where(slug)
@@ -75,7 +87,10 @@ class User:
         """
         Json serializer for row.
         """
-        user = dict(row)
+        if not row:
+            return
+
+        user = dict(row._mapping)
         user['date_of_birth'] = str(user['date_of_birth'])
         user['permissions'] = user['perm_name']
         user.pop('perm_name')
@@ -103,15 +118,11 @@ class User:
         """
         if not data.get('permissions'):
             return
-
         perm = data['permissions']
         perm_id = await conn.scalar(
             sa.select(self.sub_model.c.id)
             .where(self.sub_model.c.perm_name == perm)
         )
-        if not perm_id:
-            raise ValueError
-
         data['permissions'] = perm_id
 
     async def _set_where(self, slug):

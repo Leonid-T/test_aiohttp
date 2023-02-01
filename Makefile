@@ -1,5 +1,8 @@
 build:
 	docker-compose -f docker-compose.yml build $(c)
+rebuild:
+	docker-compose -f docker-compose.yml down --rmi all -v $(c)
+	docker-compose -f docker-compose.yml up -d $(c)
 up:
 	docker-compose -f docker-compose.yml up -d $(c)
 start:
@@ -7,7 +10,7 @@ start:
 down:
 	docker-compose -f docker-compose.yml down $(c)
 destroy:
-	docker-compose -f docker-compose.yml down -v $(c)
+	docker-compose -f docker-compose.yml down --rmi all -v $(c)
 stop:
 	docker-compose -f docker-compose.yml stop $(c)
 restart:
@@ -18,10 +21,10 @@ logs:
 ps:
 	docker-compose -f docker-compose.yml ps
 start-server:
-	docker-compose -f docker-compose.yml start server
+	docker-compose -f docker-compose.yml start server $(c)
 stop-server:
-	docker-compose -f docker-compose.yml stop server
+	docker-compose -f docker-compose.yml stop server $(c)
 start-postgres:
-	docker-compose -f docker-compose.yml start postgres
+	docker-compose -f docker-compose.yml start postgres $(c)
 stop-postgres:
-	docker-compose -f docker-compose.yml stop postgres
+	docker-compose -f docker-compose.yml stop postgres $(c)

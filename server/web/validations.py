@@ -1,49 +1,28 @@
-from jsonschema import validate
+from pydantic import BaseModel, Field, Extra, validator
+from datetime import date
+from typing import Literal, Annotated
 
 
-async def json_validate_login(json_data):
-    schema = {
-        'type': 'object',
-        'properties': {
-            'login': {'type': 'string'},
-            'password': {'type': 'string'},
-        },
-        'required': ['login', 'password'],
-        'additionalProperties': False,
-    }
-    validate(instance=json_data, schema=schema)
+class LoginModel(BaseModel, extra=Extra.forbid):
+    login: Annotated[str, Field(max_length=128)]
+    password: str
 
 
-async def json_validate_create_user(json_data):
-    schema = {
-        'type': 'object',
-        'properties': {
-            'id': {'type': 'number'},
-            'name': {'type': 'string'},
-            'surname': {'type': 'string'},
-            'login': {'type': 'string'},
-            'password': {'type': 'string'},
-            'date_of_birth': {'type': 'string'},
-            'permissions': {'type': 'string'},
-        },
-        'required': ['login', 'password'],
-        'additionalProperties': False,
-    }
-    validate(instance=json_data, schema=schema)
+class CreateUserModel(BaseModel, extra=Extra.forbid):
+    name: Annotated[str, Field(max_length=32)] = None
+    surname: Annotated[str, Field(max_length=32)] = None
+    login: Annotated[str, Field(max_length=128)]
+    password: str
+    date_of_birth: date = None
+    permissions: Literal['admin', 'read', 'block'] = None
+
+    @validator('login')
+    def login_should_not_be_numeric(cls, v):
+        if v.isdigit():
+            raise ValueError('login should not be numeric')
+        return v
 
 
-async def json_validate_update_user(json_data):
-    schema = {
-        'type': 'object',
-        'properties': {
-            'id': {'type': 'number'},
-            'name': {'type': 'string'},
-            'surname': {'type': 'string'},
-            'login': {'type': 'string'},
-            'password': {'type': 'string'},
-            'date_of_birth': {'type': 'string'},
-            'permissions': {'type': 'string'},
-        },
-        'additionalProperties': False,
-    }
-    validate(instance=json_data, schema=schema)
+class UpdateUserModel(CreateUserModel):
+    login: Annotated[str, Field(max_length=128)] = None
+    password: str = None

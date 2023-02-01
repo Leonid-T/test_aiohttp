@@ -1,338 +1,167 @@
 from aiohttp import web
 from aiohttp_security import remember, forget, check_authorized, check_permission
+from aiohttp_pydantic import PydanticView
+from aiohttp_pydantic.oas.typing import r200, r400, r401, r403, r404
+from pydantic import ValidationError
+from typing import Union
 
 from server.store.pg.auth import check_credentials
-from server.store.pg.api import User
 
-from .validations import json_validate_login, json_validate_create_user, json_validate_update_user
-
-
-async def login(request):
-    """
-    User session authorization.
-
-    ---
-    tags:
-    - Authorization
-    summary: User login
-    description: This can only be done by an unblocked users.
-    operationId: login
-    produces:
-    - application/json
-    parameters:
-    - in: body
-      name: body
-      description: User authorization
-      required: false
-      schema:
-        type: object
-        properties:
-          login:
-            type: string
-          password:
-            type: string
-    responses:
-      '200':
-        description: successful operation
-      '400':
-        description: Invalid username/password combination or this user is blocked
-        schema:
-          type: object
-          properties:
-            error:
-              type: string
-    """
-    data = await request.json()
-    await json_validate_login(data)
-
-    conn = request.app['conn']
-    if not await check_credentials(conn, data):
-        return web.json_response(
-            {'error': 'Invalid username/password combination or this user is blocked'}, status=400
-        )
-
-    response = web.json_response(status=200)
-    await remember(request, response, data['login'])
-    return response
+from .validations import LoginModel, UpdateUserModel, CreateUserModel
 
 
-async def logout(request):
-    """
-    Session terminate.
-
-    ---
-    tags:
-    - Authorization
-    summary: User logout
-    description: This can only be done if you are authorized.
-    operationId: logout
-    responses:
-      '200':
-        description: successful operation
-      '401':
-        description: you aren't authorized
-    """
-    await check_authorized(request)
-
-    response = web.json_response(status=200)
-    await forget(request, response)
-    return response
+class CustomView(PydanticView):
+    async def on_validation_error(self, exception: ValidationError, context: str):
+        errors = exception.errors()
+        custom_errors = {error['loc'][0]: [] for error in errors}
+        for error in errors:
+            custom_errors[error['loc'][0]].append(error['msg'])
+        return web.json_response(data=custom_errors, status=400)
 
 
-class UserView(web.View):
-    async def post(self):
+class LoginView(CustomView):
+    async def post(self, data_model: LoginModel) -> Union[r200, r400]:
+        """
+        User session authorization.
+        This can only be done by an unblocked users.
+
+        Tags: Authorization
+        Status Codes:
+            200: Successful operation
+            400: Invalid username/password combination or this user is blocked
+        """
+        data = data_model.dict()
+
+        conn = self.request.app['conn']
+        if not await check_credentials(conn, data):
+            return web.json_response(
+                {'error': 'Invalid username/password combination or this user is blocked'}, status=400
+            )
+
+        response = web.json_response(status=200)
+        await remember(self.request, response, data['login'])
+        return response
+
+
+class LogoutView(CustomView):
+    async def post(self) -> Union[r200, r401]:
+        """
+        Session terminate.
+        This can only be done if you are authorized.
+
+        Tags: Authorization
+        Status Codes:
+            200: Successful operation
+            401: You aren't authorized
+        """
+        await check_authorized(self.request)
+
+        response = web.json_response(status=200)
+        await forget(self.request, response)
+        return response
+
+
+class UserView(CustomView):
+    async def post(self, user_model: CreateUserModel) -> Union[r200, r400, r401, r403]:
         """
         Create new user.
+        This can only be done by authorized users with admin permissions.
 
-        ---
-        tags:
-        - User
-        summary: Create user
-        description: This can only be done by authorized users with admin permissions.
-        operationId: create_user
-        produces:
-        - application/json
-        parameters:
-        - in: body
-          name: body
-          description: Create new user; date_of_birth format 'YYYY-MM-DD'; permissions may be 'block', 'admin' or 'read'
-          required: false
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                format: string32
-              surname:
-                type: string
-                format: string32
-              login:
-                type: string
-                format: string128
-              password:
-                type: string
-              date_of_birth:
-                type: date
-                format: iso
-              permissions:
-                type: string
-                format: block, admin, read
-        responses:
-          '200':
-            description: successful operation
-          '400':
-            description: Invalid data, insert error
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
-          '401':
-            description: you aren't authorized
-          '403':
-            description: you haven't permissions
+        Tags: User
+        Status Codes:
+            200: Successful operation
+            400: Invalid data, insert error
+            401: You aren't authorized
+            403: You haven't permissions
         """
         await check_permission(self.request, 'admin')
 
-        user_data = await self.request.json()
-        await json_validate_create_user(user_data)
-
+        user_data = user_model.dict(exclude_none=True)
         conn = self.request.app['conn']
-        user = User()
+        user = self.request.app['model']['user']
         if not await user.create(conn, user_data):
             return web.json_response({'error': 'Insert error'}, status=400)
 
         return web.json_response(status=200)
 
-    async def get(self):
+    async def get(self) -> Union[r200, r401]:
         """
         Get list of users.
+        This can only be done by authorized users. Return null if users not found.
 
-        ---
-        tags:
-        - User
-        summary: Read all users
-        description: This can only be done by authorized users. Return null if users not found.
-        operationId: read_user_all
-        responses:
-          '200':
-            description: successful operation, return list of users
-            schema:
-              type: object
-              properties:
-                id:
-                  type: int
-                name:
-                  type: string
-                  format: string32
-                surname:
-                  type: string
-                  format: string32
-                login:
-                  type: string
-                  format: string128
-                password:
-                  type: string
-                date_of_birth:
-                  type: date
-                  format: iso
-                permissions:
-                  type: string
-                  format: block, admin, read
-          '401':
-            description: you aren't authorized
+        Tags: User
+        Status Codes:
+            200: Successful operation, return list of users
+            401: You aren't authorized
         """
         await check_authorized(self.request)
 
         conn = self.request.app['conn']
-        user = User()
+        user = self.request.app['model']['user']
         users_list = await user.read_all(conn)
         return web.json_response(users_list, status=200)
 
 
-class OneUserView(web.View):
-    async def get(self):
+class OneUserView(CustomView):
+    async def get(self, slug: str, /) -> Union[r200, r401, r404]:
         """
         Get user data by id or login.
+        This can only be done by authorized users. {slug} may be 'id' or 'login'.
 
-        ---
-        tags:
-        - User
-        summary: Read user
-        description: This can only be done by authorized users. {slug} may be 'id' or 'login'. Return null if user not found.
-        operationId: read_user
-        responses:
-          '200':
-            description: successful operation
-            schema:
-              type: object
-              properties:
-                id:
-                  type: int
-                name:
-                  type: string
-                  format: string32
-                surname:
-                  type: string
-                  format: string32
-                login:
-                  type: string
-                  format: string128
-                password:
-                  type: string
-                date_of_birth:
-                  type: date
-                  format: iso
-                permissions:
-                  type: string
-                  format: block, admin, read
-          '401':
-            description: you aren't authorized
-          '404':
-            description: not found
+        Tags: User
+        Status Codes:
+            200: Successful operation
+            401: You aren't authorized
+            404: Not found
         """
         await check_authorized(self.request)
 
-        slug = self.request.match_info.get('slug')
-
         conn = self.request.app['conn']
-        user = User()
+        user = self.request.app['model']['user']
         user_data = await user.read(conn, slug)
         if not user_data:
             raise web.HTTPNotFound
 
         return web.json_response(user_data, status=200)
 
-    async def patch(self):
+    async def patch(self, slug: str, /, user_model: UpdateUserModel) -> Union[r200, r400, r401, r403]:
         """
         Update user by id or login.
+        This can only be done by authorized users with admin permissions. {slug} may be 'id' or 'login'.
 
-        ---
-        tags:
-        - User
-        summary: Update user
-        description: This can only be done by authorized users with admin permissions. {slug} may be 'id' or 'login'
-        operationId: update_user
-        produces:
-        - application/json
-        parameters:
-        - in: body
-          name: body
-          description: Update user; date_of_birth format 'YYYY-MM-DD'; permissions may be 'block', 'admin' or 'read'
-          required: false
-          schema:
-            type: object
-            properties:
-              name:
-                type: string
-                format: string32
-              surname:
-                type: string
-                format: string32
-              login:
-                type: string
-                format: string128
-              password:
-                type: string
-              date_of_birth:
-                type: date
-                format: iso
-              permissions:
-                type: string
-                format: block, admin, read
-        responses:
-          '200':
-            description: successful operation
-          '400':
-            description: Invalid data, update error
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
-          '401':
-            description: you aren't authorized
-          '403':
-            description: you haven't permissions
+        Tags: User
+        Status Codes:
+            200: Successful operation
+            400: Invalid data, update error
+            401: You aren't authorized
+            403: You haven't permissions
         """
         await check_permission(self.request, 'admin')
 
-        user_data = await self.request.json()
-        await json_validate_update_user(user_data)
-
-        slug = self.request.match_info.get('slug')
+        user_data = user_model.dict(exclude_none=True)
         conn = self.request.app['conn']
-        user = User()
+        user = self.request.app['model']['user']
         if not await user.update(conn, slug, user_data):
             return web.json_response({'error': 'Update error'}, status=400)
 
         return web.json_response(status=200)
 
-    async def delete(self):
+    async def delete(self, slug: str, /) -> Union[r200, r400, r401, r403]:
         """
         Delete user by id or login.
+        This can only be done by authorized users with admin permissions. {slug} may be 'id' or 'login'.
 
-        ---
-        tags:
-        - User
-        summary: Delete user
-        description: This can only be done by authorized users with admin permissions. {slug} may be 'id' or 'login'
-        operationId: delete_user
-        responses:
-          '200':
-            description: successful operation
-          '400':
-            description: delete error
-          '401':
-            description: you aren't authorized
-          '403':
-            description: you haven't permissions
+        Tags: User
+        Status Codes:
+            200: Successful operation
+            400: Delete error
+            401: You aren't authorized
+            403: You haven't permissions
         """
         await check_permission(self.request, 'admin')
 
-        slug = self.request.match_info.get('slug')
         conn = self.request.app['conn']
-        user = User()
+        user = self.request.app['model']['user']
         if not await user.delete(conn, slug):
             return web.json_response({'error': 'Delete error'}, status=400)
 
