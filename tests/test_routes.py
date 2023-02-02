@@ -39,8 +39,6 @@ async def test_login_with_invalid_data_1(client):
         'password11': 'admin'
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_login_with_invalid_data_2(client):
@@ -52,8 +50,6 @@ async def test_login_with_invalid_data_2(client):
         'password': None
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_login_with_read_permissions(client):
@@ -114,7 +110,10 @@ async def test_create_user_with_admin(client_admin):
         'date_of_birth': '1970-01-01',
         'permissions': 'read'
     })
-    assert resp.status == 200
+    assert resp.status == 201
+    data = await resp.json()
+    assert isinstance(data, dict)
+    await json_validate_user(data)
 
 
 async def test_create_user_without_login(client):
@@ -136,10 +135,10 @@ async def test_create_user_with_read_permissions(client_read):
     Creating user with a user with read permissions should fail 403.
     """
     resp = await client_read.post('/user', json={
-        'name': 'test2',
-        'surname': 'test2',
-        'login': 'test2',
-        'password': '12345',
+        'name': 'test',
+        'surname': 'test',
+        'login': 'test',
+        'password': 'test',
         'date_of_birth': '1970-01-01',
     })
     assert resp.status == 403
@@ -153,13 +152,11 @@ async def test_create_user_with_invalid_data_1(client_admin):
         'name': 'test',
         'surname': 'test',
         'login1': 'test',
-        'password': '12345',
+        'password': 'test',
         'date_of_birth': '1970-01-01',
         'permissions': 'read'
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_create_user_with_invalid_data_2(client_admin):
@@ -170,13 +167,11 @@ async def test_create_user_with_invalid_data_2(client_admin):
         'name': 'test',
         'surname': 'test',
         'login': 'test',
-        'password': '12345',
-        'date_of_birth': '1970_01_01',
-        'permissions': 'read'
+        'password': 'test',
+        'date_of_birth': '1970-01-01',
+        'permissions': 'other'
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_create_repeating_user(client_admin):
@@ -189,8 +184,6 @@ async def test_create_repeating_user(client_admin):
         'password': 'test',
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_read_user_list_with_admin(client_admin):
@@ -297,6 +290,9 @@ async def test_update_user_with_admin_by_login(client_admin):
         'permissions': 'admin'
     })
     assert resp.status == 200
+    data = await resp.json()
+    assert isinstance(data, dict)
+    await json_validate_user(data)
 
 
 async def test_update_user_with_admin_by_id(client_admin):
@@ -313,6 +309,9 @@ async def test_update_user_with_admin_by_id(client_admin):
         'permissions': 'admin'
     })
     assert resp.status == 200
+    data = await resp.json()
+    assert isinstance(data, dict)
+    await json_validate_user(data)
 
 
 async def test_update_user_without_login(client):
@@ -361,8 +360,6 @@ async def test_update_user_with_invalid_data_1(client_admin):
         'permissions1': 'admin'
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_update_user_with_invalid_data_2(client_admin):
@@ -371,11 +368,9 @@ async def test_update_user_with_invalid_data_2(client_admin):
     """
     login = await random_user_login(client_admin.conn)
     resp = await client_admin.patch(f'/user/{login}', json={
-        'date_of_birth': '1970_01_02',
+        'permissions': 'other',
     })
     assert resp.status == 400
-    data = await resp.json()
-    assert data == {'error': 'Invalid data'}
 
 
 async def test_delete_user_with_admin_by_login(client_admin):

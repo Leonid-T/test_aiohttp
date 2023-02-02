@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from server.web.settings.conf import config
+from server.web.settings.conf import CONFIG
 from .models import metadata, user, permissions
 
 
@@ -12,7 +12,7 @@ async def create_db_engine():
     Create database engine with default configuration.
     """
     engine = create_async_engine(
-        config['db_url'],  # 'test_db_url' may be used by start without docker
+        CONFIG['test_db_url'],  # 'test_db_url' may be used by start without docker
         echo=True,
         future=True,
     )

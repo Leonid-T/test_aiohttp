@@ -8,7 +8,7 @@ class LoginModel(BaseModel, extra=Extra.forbid):
     password: str
 
 
-class CreateUserModel(BaseModel, extra=Extra.forbid):
+class UserModel(BaseModel, extra=Extra.forbid):
     name: Annotated[str, Field(max_length=32)] = None
     surname: Annotated[str, Field(max_length=32)] = None
     login: Annotated[str, Field(max_length=128)]
@@ -22,7 +22,19 @@ class CreateUserModel(BaseModel, extra=Extra.forbid):
             raise ValueError('login should not be numeric')
         return v
 
+    @validator('login')
+    def login_should_not_be_empty(cls, v):
+        if not v:
+            raise ValueError('login should not be empty')
+        return v
 
-class UpdateUserModel(CreateUserModel):
+    @validator('password')
+    def password_should_not_be_empty(cls, v):
+        if not v:
+            raise ValueError('password should not be empty')
+        return v
+
+
+class UpdateUserModel(UserModel):
     login: Annotated[str, Field(max_length=128)] = None
     password: str = None

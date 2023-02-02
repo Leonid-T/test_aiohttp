@@ -1,13 +1,13 @@
 from aiohttp import web
 from aiohttp_security import remember, forget, check_authorized, check_permission
 from aiohttp_pydantic import PydanticView
-from aiohttp_pydantic.oas.typing import r200, r400, r401, r403, r404
+from aiohttp_pydantic.oas.typing import r200, r201, r400, r401, r403, r404
 from pydantic import ValidationError
 from typing import Union
 
 from server.store.pg.auth import check_credentials
 
-from .validations import LoginModel, UpdateUserModel, CreateUserModel
+from .validations import LoginModel, UserModel, UpdateUserModel
 
 
 class CustomView(PydanticView):
@@ -31,7 +31,6 @@ class LoginView(CustomView):
             400: Invalid username/password combination or this user is blocked
         """
         data = data_model.dict()
-
         conn = self.request.app['conn']
         if not await check_credentials(conn, data):
             return web.json_response(
@@ -62,14 +61,14 @@ class LogoutView(CustomView):
 
 
 class UserView(CustomView):
-    async def post(self, user_model: CreateUserModel) -> Union[r200, r400, r401, r403]:
+    async def post(self, user_model: UserModel) -> Union[r201, r400, r401, r403]:
         """
         Create new user.
         This can only be done by authorized users with admin permissions.
 
         Tags: User
         Status Codes:
-            200: Successful operation
+            201: Successful operation
             400: Invalid data, insert error
             401: You aren't authorized
             403: You haven't permissions
@@ -79,10 +78,11 @@ class UserView(CustomView):
         user_data = user_model.dict(exclude_none=True)
         conn = self.request.app['conn']
         user = self.request.app['model']['user']
-        if not await user.create(conn, user_data):
+        created_user = await user.create(conn, user_data)
+        if not created_user:
             return web.json_response({'error': 'Insert error'}, status=400)
 
-        return web.json_response(status=200)
+        return web.json_response(created_user, status=201)
 
     async def get(self) -> Union[r200, r401]:
         """
@@ -141,10 +141,11 @@ class OneUserView(CustomView):
         user_data = user_model.dict(exclude_none=True)
         conn = self.request.app['conn']
         user = self.request.app['model']['user']
-        if not await user.update(conn, slug, user_data):
+        updated_user = await user.update(conn, slug, user_data)
+        if not updated_user:
             return web.json_response({'error': 'Update error'}, status=400)
 
-        return web.json_response(status=200)
+        return web.json_response(updated_user, status=200)
 
     async def delete(self, slug: str, /) -> Union[r200, r400, r401, r403]:
         """

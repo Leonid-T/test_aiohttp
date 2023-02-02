@@ -6,7 +6,7 @@ from datetime import date
 from . import models
 
 
-def setup_models(app):
+def setup_model_managers(app):
     app['model'] = {
         'user': User(),
     }
@@ -32,9 +32,25 @@ class User:
         await self._set_permissions(conn, data)
 
         ret = await conn.execute(
-            self.model.insert(), data
+            self.model.insert()
+            .values(data)
+            .returning(
+                self.model.c.id,
+                self.model.c.name,
+                self.model.c.surname,
+                self.model.c.login,
+                self.model.c.password,
+                sa.cast(self.model.c.date_of_birth, sa.String),
+                self.model.c.permissions,
+            )
         )
-        return ret.rowcount
+        row = ret.fetchone()
+        if not row:
+            return
+
+        created_user = dict(row._mapping)
+        await self._get_permissions(conn, created_user)
+        return created_user
 
     async def read(self, conn, slug):
         where = await self._set_where(slug)
@@ -45,12 +61,13 @@ class User:
                 self.model.c.surname,
                 self.model.c.login,
                 self.model.c.password,
-                self.model.c.date_of_birth,
-                self.sub_model.c.perm_name,
+                sa.cast(self.model.c.date_of_birth, sa.String),
+                self.sub_model.c.perm_name.label('permissions'),
             ).where(sa.and_(self.model.c.permissions == self.sub_model.c.id, where))
         )
         row = ret.fetchone()
-        return await self._create_json_from_row(row)
+        if row:
+            return dict(row._mapping)
 
     async def read_all(self, conn):
         ret = await conn.execute(
@@ -60,11 +77,11 @@ class User:
                 self.model.c.surname,
                 self.model.c.login,
                 self.model.c.password,
-                self.model.c.date_of_birth,
-                self.sub_model.c.perm_name,
+                sa.cast(self.model.c.date_of_birth, sa.String),
+                self.sub_model.c.perm_name.label('permissions'),
             ).where(self.model.c.permissions == self.sub_model.c.id)
         )
-        return [await self._create_json_from_row(row) for row in ret]
+        return [dict(row._mapping) for row in ret]
 
     async def update(self, conn, slug, data):
         await self._set_password(data)
@@ -73,8 +90,23 @@ class User:
         where = await self._set_where(slug)
         ret = await conn.execute(
             self.model.update().values(data).where(where)
+            .returning(
+                self.model.c.id,
+                self.model.c.name,
+                self.model.c.surname,
+                self.model.c.login,
+                self.model.c.password,
+                sa.cast(self.model.c.date_of_birth, sa.String),
+                self.model.c.permissions,
+            )
         )
-        return ret.rowcount
+        row = ret.fetchone()
+        if not row:
+            return
+
+        updated_user = dict(row._mapping)
+        await self._get_permissions(conn, updated_user)
+        return updated_user
 
     async def delete(self, conn, slug):
         where = await self._set_where(slug)
@@ -82,19 +114,6 @@ class User:
             self.model.delete().where(where)
         )
         return ret.rowcount
-
-    async def _create_json_from_row(self, row):
-        """
-        Json serializer for row.
-        """
-        if not row:
-            return
-
-        user = dict(row._mapping)
-        user['date_of_birth'] = str(user['date_of_birth'])
-        user['permissions'] = user['perm_name']
-        user.pop('perm_name')
-        return user
 
     async def _set_password(self, data):
         """
@@ -112,18 +131,29 @@ class User:
             return
         data['date_of_birth'] = date.fromisoformat(data['date_of_birth'])
 
-    async def _set_permissions(self, conn, data):
+    async def _set_permissions(self, conn, user_data):
         """
         Setting permission id by permission name.
         """
-        if not data.get('permissions'):
+        if not user_data.get('permissions'):
             return
-        perm = data['permissions']
+        perm_name = user_data['permissions']
         perm_id = await conn.scalar(
             sa.select(self.sub_model.c.id)
-            .where(self.sub_model.c.perm_name == perm)
+            .where(self.sub_model.c.perm_name == perm_name)
         )
-        data['permissions'] = perm_id
+        user_data['permissions'] = perm_id
+
+    async def _get_permissions(self, conn, user_data):
+        """
+        Setting permission name by permission id.
+        """
+        perm_id = user_data['permissions']
+        perm_name = await conn.scalar(
+            sa.select(self.sub_model.c.perm_name)
+            .where(self.sub_model.c.id == perm_id)
+        )
+        user_data['permissions'] = perm_name
 
     async def _set_where(self, slug):
         """

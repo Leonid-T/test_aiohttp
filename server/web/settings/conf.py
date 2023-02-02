@@ -5,7 +5,7 @@ import logging
 BASE_DIR = pathlib.Path(__file__).parent.parent.parent  # server/
 
 # default application config
-config = {
+CONFIG = {
     'db_url': 'postgresql+asyncpg://postgres:admin@postgres:5432',
     'test_db_url': 'postgresql+asyncpg://postgres:admin@localhost:5432/test_db',  # may be used by start without docker
     'log_path': 'server.log',
@@ -13,4 +13,4 @@ config = {
     'docs_url': '/backend',
 }
 
-logging.basicConfig(level=logging.DEBUG, filename=BASE_DIR / config['log_path'], filemode='w')
+logging.basicConfig(level=logging.DEBUG, filename=BASE_DIR / CONFIG['log_path'], filemode='w')
