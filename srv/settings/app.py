@@ -1,12 +1,11 @@
 from aiohttp import web
 from aiohttp_pydantic import oas
 
-from server.store.pg.accessor import setup_accessors
-from server.store.pg.api import setup_model_managers
-
-from .settings.conf import CONFIG
-from .routes import routes_list
-from .middlewares import setup_middlewares
+from srv.store.pg.accessor import setup_accessors
+from srv.actions.managers import setup_model_managers
+from srv.settings.config import CONFIG
+from srv.web.routes import routes_list
+from srv.web.middlewares import setup_middlewares
 
 
 async def create_app():

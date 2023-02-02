@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from server.web.settings.conf import CONFIG
-from .models import metadata, user, permissions
+from srv.settings.config import CONFIG
+from .models import user, permissions
 
 
 async def create_db_engine():
@@ -12,20 +12,25 @@ async def create_db_engine():
     Create database engine with default configuration.
     """
     engine = create_async_engine(
-        CONFIG['test_db_url'],  # 'test_db_url' may be used by start without docker
+        CONFIG['db_url'],
         echo=True,
         future=True,
     )
     return engine
 
 
-async def create_tables(conn):
-    await conn.run_sync(metadata.drop_all)
-    await conn.run_sync(metadata.create_all)
-
-
-async def delete_tables(conn):
-    await conn.run_sync(metadata.drop_all)
+async def check_default_data(conn):
+    """
+    Create default admin and permissions if they are not exist.
+    """
+    admin = await conn.scalar(
+        user.select().where(
+            user.c.login == 'admin',
+        )
+    )
+    if not admin:
+        await create_def_permissions(conn)
+        await create_admin(conn)
 
 
 async def create_admin(conn):
@@ -34,7 +39,6 @@ async def create_admin(conn):
     """
     await conn.execute(
         user.insert(), {
-            'id': 1,
             'name': 'admin',
             'surname': 'admin',
             'login': 'admin',

@@ -5,7 +5,7 @@ from aiohttp_pydantic.oas.typing import r200, r201, r400, r401, r403, r404
 from pydantic import ValidationError
 from typing import Union
 
-from server.store.pg.auth import check_credentials
+from srv.actions.authorization import check_credentials
 
 from .validations import LoginModel, UserModel, UpdateUserModel
 

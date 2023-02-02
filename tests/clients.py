@@ -2,7 +2,7 @@ import pytest_asyncio
 
 from aiohttp.web import HTTPForbidden
 
-from server.web.app import create_app
+from srv.settings.app import create_app
 from tests.init_app import get_test_db_engine
 
 
@@ -30,8 +30,8 @@ async def client(aiohttp_client, mocker):
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:
-        mocker.patch('server.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
-        mocker.patch('server.store.pg.accessor.PGConnect.__aexit__', return_value=None)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aexit__', return_value=None)
         yield CLIENT
     await http_client.close()
 
@@ -44,10 +44,10 @@ async def client_admin(aiohttp_client, mocker):
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:
-        mocker.patch('server.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
-        mocker.patch('server.store.pg.accessor.PGConnect.__aexit__', return_value=None)
-        mocker.patch('server.web.views.check_authorized', return_value=None)
-        mocker.patch('server.web.views.check_permission', return_value=None)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aexit__', return_value=None)
+        mocker.patch('srv.web.views.check_authorized', return_value=None)
+        mocker.patch('srv.web.views.check_permission', return_value=None)
         yield CLIENT
     await http_client.close()
 
@@ -60,9 +60,9 @@ async def client_read(aiohttp_client, mocker):
     app = await create_app()
     http_client = await aiohttp_client(app)
     async with Client(http_client) as CLIENT:
-        mocker.patch('server.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
-        mocker.patch('server.store.pg.accessor.PGConnect.__aexit__', return_value=None)
-        mocker.patch('server.web.views.check_authorized', return_value=None)
-        mocker.patch('server.web.views.check_permission', side_effect=HTTPForbidden)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aenter__', return_value=CLIENT.conn)
+        mocker.patch('srv.store.pg.accessor.PGConnect.__aexit__', return_value=None)
+        mocker.patch('srv.web.views.check_authorized', return_value=None)
+        mocker.patch('srv.web.views.check_permission', side_effect=HTTPForbidden)
         yield CLIENT
     await http_client.close()

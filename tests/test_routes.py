@@ -2,7 +2,7 @@ import pytest
 import asyncio
 
 from tests.init_app import create_db_data, delete_db_data
-from tests.tools import insert_user, json_validate_user, random_user_id, random_user_login
+from tests.tools import insert_user, validate_user, random_user_id, random_user_login
 from tests.clients import client, client_admin, client_read
 
 
@@ -113,7 +113,7 @@ async def test_create_user_with_admin(client_admin):
     assert resp.status == 201
     data = await resp.json()
     assert isinstance(data, dict)
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_create_user_without_login(client):
@@ -196,7 +196,7 @@ async def test_read_user_list_with_admin(client_admin):
     assert isinstance(data, list)
     for user in data:
         assert isinstance(user, dict)
-        await json_validate_user(user)
+        await validate_user(user)
 
 
 async def test_read_user_list_without_login(client):
@@ -217,7 +217,7 @@ async def test_read_user_list_with_read_permissions(client_read):
     assert isinstance(data, list)
     for user in data:
         assert isinstance(user, dict)
-        await json_validate_user(user)
+        await validate_user(user)
 
 
 async def test_read_user_with_admin_by_login(client_admin):
@@ -230,7 +230,7 @@ async def test_read_user_with_admin_by_login(client_admin):
     data = await resp.json()
     assert isinstance(data, dict)
     assert data['login'] == login
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_read_user_with_admin_by_id(client_admin):
@@ -243,7 +243,7 @@ async def test_read_user_with_admin_by_id(client_admin):
     data = await resp.json()
     assert isinstance(data, dict)
     assert data['id'] == user_id
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_read_user_without_login(client):
@@ -265,7 +265,7 @@ async def test_read_user_with_read_permissions(client_read):
     data = await resp.json()
     assert isinstance(data, dict)
     assert data['login'] == login
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_read_non_existent_user(client_admin):
@@ -292,7 +292,7 @@ async def test_update_user_with_admin_by_login(client_admin):
     assert resp.status == 200
     data = await resp.json()
     assert isinstance(data, dict)
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_update_user_with_admin_by_id(client_admin):
@@ -311,7 +311,7 @@ async def test_update_user_with_admin_by_id(client_admin):
     assert resp.status == 200
     data = await resp.json()
     assert isinstance(data, dict)
-    await json_validate_user(data)
+    await validate_user(data)
 
 
 async def test_update_user_without_login(client):

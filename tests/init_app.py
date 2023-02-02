@@ -5,8 +5,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from passlib.hash import sha256_crypt
 from datetime import date, timedelta
 
-from server.store.pg.models import user
-from server.store.pg.opt import delete_tables, create_tables, create_def_permissions, create_admin
+from srv.store.pg.models import metadata, user
+from srv.store.pg.options import create_def_permissions, create_admin
 
 
 # change this url to connect to your test base
@@ -23,6 +23,15 @@ async def get_test_db_engine():
         future=True,
     )
     return engine
+
+
+async def create_tables(conn):
+    await conn.run_sync(metadata.drop_all)
+    await conn.run_sync(metadata.create_all)
+
+
+async def delete_tables(conn):
+    await conn.run_sync(metadata.drop_all)
 
 
 async def create_db_data():

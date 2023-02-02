@@ -9,6 +9,7 @@ class LoginModel(BaseModel, extra=Extra.forbid):
 
 
 class UserModel(BaseModel, extra=Extra.forbid):
+    id: int = None
     name: Annotated[str, Field(max_length=32)] = None
     surname: Annotated[str, Field(max_length=32)] = None
     login: Annotated[str, Field(max_length=128)]

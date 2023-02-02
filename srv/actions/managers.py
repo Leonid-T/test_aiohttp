@@ -3,7 +3,7 @@ import sqlalchemy as sa
 from passlib.hash import sha256_crypt
 from datetime import date
 
-from . import models
+from srv.store.pg import models
 
 
 def setup_model_managers(app):
