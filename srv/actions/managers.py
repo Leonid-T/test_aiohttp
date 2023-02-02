@@ -48,7 +48,7 @@ class User:
         if not row:
             return
 
-        created_user = dict(row._mapping)
+        created_user = row._asdict()
         await self._get_permissions(conn, created_user)
         return created_user
 
@@ -67,7 +67,7 @@ class User:
         )
         row = ret.fetchone()
         if row:
-            return dict(row._mapping)
+            return row._asdict()
 
     async def read_all(self, conn):
         ret = await conn.execute(
@@ -81,7 +81,7 @@ class User:
                 self.sub_model.c.perm_name.label('permissions'),
             ).where(self.model.c.permissions == self.sub_model.c.id)
         )
-        return [dict(row._mapping) for row in ret]
+        return [row._asdict() for row in ret]
 
     async def update(self, conn, slug, data):
         await self._set_password(data)
@@ -104,7 +104,7 @@ class User:
         if not row:
             return
 
-        updated_user = dict(row._mapping)
+        updated_user = row._asdict()
         await self._get_permissions(conn, updated_user)
         return updated_user
 
