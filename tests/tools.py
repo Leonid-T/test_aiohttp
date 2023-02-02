@@ -2,9 +2,11 @@ import random
 import sqlalchemy as sa
 
 from passlib.hash import sha256_crypt
+from pydantic import BaseModel, Field
+from typing import Annotated, Literal, Optional
+from datetime import date
 
 from srv.store.pg.models import user, permissions
-from srv.web.validations import UserModel
 
 
 async def insert_user(conn, login, password, perm='read'):
@@ -18,8 +20,18 @@ async def insert_user(conn, login, password, perm='read'):
     })
 
 
+class UserOutModel(BaseModel):
+    id: int
+    name: Optional[Annotated[str, Field(max_length=32)]]
+    surname: Optional[Annotated[str, Field(max_length=32)]]
+    login: Annotated[str, Field(max_length=128)]
+    password: str
+    date_of_birth: Optional[date]
+    permissions: Literal['admin', 'read', 'block']
+
+
 async def validate_user(user_data):
-    UserModel(**user_data)
+    UserOutModel(**user_data)
 
 
 async def random_user_id(conn):
