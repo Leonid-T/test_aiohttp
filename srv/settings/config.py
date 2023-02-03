@@ -7,14 +7,16 @@ BASE_DIR = pathlib.Path(__file__).parent.parent.parent
 
 # postgres config from environ
 PG_CONFIG = {
-    'name': os.environ.get("POSTGRES_DB"),
-    'user': os.environ.get("POSTGRES_USER"),
-    'password': os.environ.get("POSTGRES_PASSWORD"),
+    'name': os.environ.get('POSTGRES_DB', 'test_db'),
+    'user': os.environ.get('POSTGRES_USER', 'postgres'),
+    'password': os.environ.get('POSTGRES_PASSWORD', 'admin'),
+    'host': os.environ.get('SQL_HOST', 'localhost'),
+    'port': os.environ.get('SQL_PORT', '5432'),
 }
 
 # default application config
 CONFIG = {
-    'db_url': f'postgresql+asyncpg://{PG_CONFIG["user"]}:{PG_CONFIG["password"]}@postgres:5432/{PG_CONFIG["name"]}',
+    'db_url': f'postgresql+asyncpg://{PG_CONFIG["user"]}:{PG_CONFIG["password"]}@{PG_CONFIG["host"]}:{PG_CONFIG["port"]}/{PG_CONFIG["name"]}',
     'log_path': 'srv.log',
     'cookie_key': 'fa5s3nuzsfhzlgnfdgv86g1rdg7sd361',  # length must be 32 characters
     'docs_url': '/backend',
