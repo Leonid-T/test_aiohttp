@@ -75,7 +75,7 @@ class UserView(CustomView):
         """
         await check_permission(self.request, 'admin')
 
-        user_data = user_model.dict(exclude_none=True)
+        user_data = user_model.dict(exclude_unset=True)
         conn = self.request.app['conn']
         user = self.request.app['model']['user']
         created_user = await user.create(conn, user_data)
@@ -138,7 +138,7 @@ class OneUserView(CustomView):
         """
         await check_permission(self.request, 'admin')
 
-        user_data = user_model.dict(exclude_none=True)
+        user_data = user_model.dict(exclude_unset=True)
         conn = self.request.app['conn']
         user = self.request.app['model']['user']
         updated_user = await user.update(conn, slug, user_data)

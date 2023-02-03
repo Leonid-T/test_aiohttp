@@ -17,15 +17,21 @@ class UserModel(BaseModel, extra=Extra.forbid):
     date_of_birth: date = None
     permissions: Literal['admin', 'read', 'block'] = None
 
+    @validator('login', 'password')
+    def should_not_be_null(cls, v):
+        if v is None:
+            raise ValueError('this field should not be null')
+        return v
+
     @validator('login')
     def should_not_be_numeric(cls, v):
-        if v.isdigit():
+        if isinstance(v, str) and v.isdigit():
             raise ValueError('this field should not be numeric')
         return v
 
-    @validator('login', 'password', 'name', 'surname', 'date_of_birth')
+    @validator('login', 'password', 'name', 'surname')
     def should_not_be_empty(cls, v):
-        if not v:
+        if isinstance(v, str) and not v:
             raise ValueError('this field should not be empty')
         return v
 
