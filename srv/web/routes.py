@@ -4,8 +4,8 @@ from . import views
 
 
 routes_list = [
-    web.view('/login', views.LoginView),
-    web.view('/logout', views.LogoutView),
+    web.post('/login', views.login),
+    web.post('/logout', views.logout),
     web.view('/user', views.UserView),
-    web.view('/user/{slug}', views.OneUserView),
+    web.view('/user/{slug}', views.UserDetailView),
 ]

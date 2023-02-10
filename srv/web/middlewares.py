@@ -1,8 +1,10 @@
 from aiohttp import web
+from aiohttp_apispec import validation_middleware
 from sqlalchemy.exc import IntegrityError, DBAPIError
 
 
 def setup_middlewares(app):
+    app.middlewares.append(validation_middleware)
     app.middlewares.append(error_middleware)
     app.middlewares.append(db_connect_middleware)
 
@@ -10,7 +12,7 @@ def setup_middlewares(app):
 @web.middleware
 async def error_middleware(request, handler):
     """
-    Middleware for errors related to incorrect data entry.
+    Middleware for errors related to incorrect data entry
     """
     try:
         response = await handler(request)
@@ -22,7 +24,7 @@ async def error_middleware(request, handler):
 @web.middleware
 async def db_connect_middleware(request, handler):
     """
-    Creating a database connection.
+    Creating a database connection
     """
     db = request.app.db
     async with db.begin() as conn:

@@ -14,7 +14,7 @@ def setup_accessors(app):
 
 class PostgresAccessor:
     """
-    Database connections, get transaction management.
+    Database connections, get transaction management
     """
 
     def __init__(self):
@@ -38,7 +38,7 @@ class PostgresAccessor:
 
     def connect(self):
         """
-        Database connection without commit.
+        Database connection without commit
         """
         if self.engine is None:
             return
@@ -47,7 +47,7 @@ class PostgresAccessor:
 
     def begin(self):
         """
-        Database connection with commit.
+        Database connection with commit
         """
         _connect = PGConnect(self.engine, True)
         return _connect
@@ -55,7 +55,7 @@ class PostgresAccessor:
 
 class PGConnect:
     """
-    Transaction management.
+    Transaction management
     """
 
     def __init__(self, engine, _is_transaction=False):

@@ -1,5 +1,5 @@
 from aiohttp import web
-from aiohttp_pydantic import oas
+from aiohttp_apispec import setup_aiohttp_apispec
 
 from srv.store.pg.accessor import setup_accessors
 from srv.actions.managers import setup_model_managers
@@ -10,7 +10,7 @@ from srv.web.middlewares import setup_middlewares
 
 async def create_app():
     """
-    Server initialization and configuration.
+    Server initialization and configuration
     """
     app = web.Application()
     app['config'] = CONFIG
@@ -18,5 +18,5 @@ async def create_app():
     setup_accessors(app)
     setup_model_managers(app)
     setup_middlewares(app)
-    oas.setup(app, url_prefix=app['config']['docs_url'])
+    setup_aiohttp_apispec(app, swagger_path=app['config']['docs_url'])
     return app

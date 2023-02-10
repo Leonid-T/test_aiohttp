@@ -1,4 +1,5 @@
 import os
+import sys
 import pathlib
 import logging
 
@@ -22,4 +23,11 @@ CONFIG = {
     'docs_url': '/backend',
 }
 
-logging.basicConfig(level=logging.DEBUG, filename=BASE_DIR / CONFIG['log_path'], filemode='w')
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(BASE_DIR / CONFIG['log_path']),
+        logging.StreamHandler(sys.stdout)
+    ],
+)

@@ -1,3 +1,4 @@
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from passlib.hash import sha256_crypt
@@ -9,7 +10,7 @@ from .models import user, permissions
 
 async def create_db_engine():
     """
-    Create database engine with default configuration.
+    Create database engine with default configuration
     """
     engine = create_async_engine(
         CONFIG['db_url'],
@@ -21,21 +22,29 @@ async def create_db_engine():
 
 async def check_default_data(conn):
     """
-    Create default admin and permissions if they are not exist.
+    Create default admin and permissions if they are not exist
     """
+    ret = await conn.execute(
+        permissions.select().where(
+            permissions.c.perm_name.in_(('block', 'admin', 'read'))
+        )
+    )
+    permissions_list = ret.fetchall()
+    if not permissions_list:
+        await create_def_permissions(conn)
+
     admin = await conn.scalar(
         user.select().where(
             user.c.login == 'admin',
         )
     )
     if not admin:
-        await create_def_permissions(conn)
         await create_admin(conn)
 
 
 async def create_admin(conn):
     """
-    Create default admin user.
+    Create default admin user
     """
     await conn.execute(
         user.insert(), {
@@ -51,7 +60,7 @@ async def create_admin(conn):
 
 async def create_def_permissions(conn):
     """
-    Create default permissions.
+    Create default permissions
     """
     await conn.execute(
         permissions.insert(), [
