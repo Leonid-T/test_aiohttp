@@ -13,7 +13,7 @@ user = Table(
     Column('login', String(128), unique=True, nullable=False),
     Column('password', String(256), nullable=False),
     Column('date_of_birth', Date),
-    Column('permissions', ForeignKey('permissions.id', ondelete='SET NULL'), default=3),
+    Column('permissions', ForeignKey('permissions.id', ondelete='SET NULL')),
 )
 
 

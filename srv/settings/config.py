@@ -2,22 +2,23 @@ import os
 import sys
 import pathlib
 import logging
+from sqlalchemy.engine import URL
 
 
 BASE_DIR = pathlib.Path(__file__).parent.parent.parent
 
-# postgres config from environ
-PG_CONFIG = {
-    'name': os.environ.get('POSTGRES_DB', 'test_db'),
-    'user': os.environ.get('POSTGRES_USER', 'postgres'),
-    'password': os.environ.get('POSTGRES_PASSWORD', 'admin'),
-    'host': os.environ.get('SQL_HOST', 'localhost'),
-    'port': os.environ.get('SQL_PORT', '5432'),
-}
 
 # default application config
 CONFIG = {
-    'db_url': f'postgresql+asyncpg://{PG_CONFIG["user"]}:{PG_CONFIG["password"]}@{PG_CONFIG["host"]}:{PG_CONFIG["port"]}/{PG_CONFIG["name"]}',
+    'db_url': URL(
+        drivername='postgresql+asyncpg',
+        database=os.environ.get('POSTGRES_DB', 'test_db'),
+        username=os.environ.get('POSTGRES_USER', 'postgres'),
+        password=os.environ.get('POSTGRES_PASSWORD', 'admin'),
+        host=os.environ.get('SQL_HOST', 'localhost'),
+        port=os.environ.get('SQL_PORT', '5432'),
+        query={},
+    ),
     'log_path': 'srv.log',
     'cookie_key': 'fa5s3nuzsfhzlgnfdgv86g1rdg7sd361',  # length must be 32 characters
     'docs_url': '/backend',

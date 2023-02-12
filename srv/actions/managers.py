@@ -83,9 +83,7 @@ class UserManager:
         """
         Setting permission id by permission name
         """
-        if not user_data.get('permissions'):
-            return
-        perm_name = user_data['permissions']
+        perm_name = user_data.get('permissions', 'read')
         perm_id = await conn.scalar(
             sa.select(self.sub_model.c.id)
             .where(self.sub_model.c.perm_name == perm_name)
