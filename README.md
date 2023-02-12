@@ -17,4 +17,4 @@ CRUD api на таблицу пользователей с правами дос
 ## Запуск тестов
 
 - создать тестовую базу
-- изменить test_db_url в файле tests/init_app.py
+- изменить test_db_url в файле tests/fixtures.py
