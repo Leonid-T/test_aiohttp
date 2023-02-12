@@ -15,7 +15,7 @@ target_metadata = metadata
 
 def do_run_migrations(connection):
     context.configure(
-        connection=connection, target_metadata=target_metadata
+        connection=connection, target_metadata=target_metadata, include_schemas=True
     )
 
     with context.begin_transaction():
@@ -29,12 +29,15 @@ async def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    engine = await create_db_engine()
+    connectable = context.config.attributes.get("connection", None)
 
-    async with engine.connect() as connection:
+    if connectable is None:
+        connectable = await create_db_engine()
+
+    async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
-    await engine.dispose()
+    await connectable.dispose()
 
 
 asyncio.run(run_migrations_online())
